@@ -1,10 +1,10 @@
 # CURRENT_STATE.md — Live Project Status
 
-> **Last Updated**: 2026-07-22
+> **Last Updated**: 2026-09-10
 
 ## Current status
 
-DeepDive (repository: Spotlight-Todo) is a working Electron 43/React desktop application with SQLite/FTS5 file search, Todo lists/tasks/notes, settings, hardened portable/local data-path handling, system tray/global shortcuts, and the Liquid Glass overlay UI.
+DeepDive (repository: Spotlight-Todo) is a working Electron 43/React desktop application with SQLite/FTS5 file search, Todo lists/tasks/notes, settings, hardened portable/local data-path handling, system tray/global shortcuts, and the Liquid Glass overlay UI. Source is version-controlled on `main` and pushed to `git@github.com:MohammadAbwini98/AI-Spotlight.git` (initial commit `56fa4a4`, verified `origin/main` in sync).
 
 ## Confirmed working
 

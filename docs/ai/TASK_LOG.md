@@ -1325,3 +1325,33 @@
 **Result**: Done
 
 ---
+
+### 2026-09-10 — Muse Spark (OpenCode) — Push project to GitHub AI-Spotlight
+
+**Agent**: Muse Spark (OpenCode)
+**Task**: Initialize local git, commit the current project, and push to git@github.com:MohammadAbwini98/AI-Spotlight.git
+
+**Files Created**:
+**Files Modified**:
+- `.gitignore` — also exclude `*.asar`, `*.tsbuildinfo`, `electron.vite.config.*.mjs` build artifacts
+- `docs/ai/CURRENT_STATE.md` — record source-control state
+- `docs/ai/TASK_LOG.md` — this entry
+
+**Tests Run**:
+- Secret scan: no `.env` files, no `ghp_`/`github_pat_`/`AKIA` tokens, no `*.pem`/`*.pfx`/`*.p12`/`*.key` outside ignored paths — passed
+- `git check-ignore` confirms `node_modules/`, `out/`, `release/`, `SpotlightData/` excluded — passed
+- `ssh -T git@github.com` authenticates as `MohammadAbwini98` — passed
+- `git ls-remote origin HEAD` returns `56fa4a4` matching local `main` — passed
+- `git status`: `main` up to date with `origin/main`, working tree clean — passed
+
+**Tests Not Run**: `npm test` / `npm run build` — no code changed, push-only task
+
+**Result**: Done
+**Notes**:
+- Repo `MohammadAbwini98/AI-Spotlight` confirmed empty/public before push.
+- No SSH key existed; generated `~/.ssh/id_ed25519_ai_spotlight` (ed25519, no passphrase) and `~/.ssh/config` pins it for `github.com` with `IdentitiesOnly yes`. User added the public key to GitHub, then ran the push.
+- Initial commit `56fa4a4` (194 files) on `main`; `git remote add origin git@github.com:MohammadAbwini98/AI-Spotlight.git`; `origin/main` verified equal to local.
+- `~/.ssh` `ssh-agent` service is Disabled on this machine; not needed since SSH uses `IdentityFile` directly.
+- Local git identity: `MohammadAbwini98 <MohammadAbwini98@users.noreply.github.com>` — change with `git config user.name/user.email` if a different identity is wanted.
+
+---
