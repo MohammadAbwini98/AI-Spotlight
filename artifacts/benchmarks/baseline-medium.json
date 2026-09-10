@@ -1,0 +1,22 @@
+{
+  "engine": "legacy-main-thread-model",
+  "profile": "medium",
+  "requestedFiles": 100000,
+  "indexedRows": 100403,
+  "durationMs": 43421,
+  "throughputPerSecond": 2312,
+  "transactions": 402,
+  "peakRssDeltaBytes": 23781376,
+  "eventLoopDelayMs": {
+    "mean": 12.16,
+    "max": 222.43,
+    "p99": 37.39
+  },
+  "searchLatencyMs": {
+    "samples": 410,
+    "max": 6.94,
+    "average": 2.85
+  },
+  "databaseBytes": 64061440,
+  "walBytes": 8417192
+}

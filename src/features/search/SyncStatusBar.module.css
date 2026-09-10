@@ -1,0 +1,63 @@
+.bar {
+  height: 28px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  background: var(--glass-bg-subtle);
+  border-top: 1px solid var(--divider);
+  flex-shrink: 0;
+  justify-content: space-between;
+}
+
+.cancelButton {
+  min-height: 22px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  background: var(--row-hover-bg);
+  font-size: 11px;
+}
+
+.cancelButton:hover {
+  color: var(--text-primary);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.text {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.spinner {
+  width: 10px;
+  height: 10px;
+  border: 1.5px solid var(--divider);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.successDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--state-success);
+}
+
+.errorDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--state-error);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

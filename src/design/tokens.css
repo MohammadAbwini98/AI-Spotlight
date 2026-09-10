@@ -1,0 +1,508 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Design Tokens — Apple Liquid Glass UI System
+   All CSS custom properties. Reference these in all components.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─── Typography ──────────────────────────────────────────────────────── */
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Segoe UI Variable',
+    'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+
+  --text-xs: 0.6875rem; /* 11px */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-base: 0.9375rem; /* 15px */
+  --text-md: 1.0625rem; /* 17px */
+  --text-lg: 1.1875rem; /* 19px */
+  --text-xl: 1.375rem; /* 22px */
+  --text-2xl: 1.625rem; /* 26px */
+
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --tracking-tight: -0.012em;
+  --tracking-caps: 0.055em;
+
+  /* ─── Corner Radii (continuous / superellipse) ────────────────────────── */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-2xl: 28px;
+  --radius-full: 9999px;
+
+  /* ─── Spacing ─────────────────────────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* ─── Animation ──────────────────────────────────────────────────────── */
+  --duration-hover: 140ms;
+  --duration-press: 110ms;
+  --duration-menu: 190ms;
+  --duration-expand: 300ms;
+  --duration-panel: 320ms;
+
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-smooth: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ─── Blur & Saturation ──────────────────────────────────────────────── */
+  --blur-sm: 8px;
+  --blur-md: 16px;
+  --blur-lg: 28px;
+  --blur-xl: 44px;
+  --saturation: 180%;
+  --glass-specular: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.34) 0%,
+    rgba(255, 255, 255, 0.08) 28%,
+    transparent 58%
+  );
+  --glass-sheen: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0.14),
+    transparent 42%,
+    rgba(122, 211, 255, 0.08)
+  );
+
+  /* ─── Focus ──────────────────────────────────────────────────────────── */
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 2px;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Light Theme Tokens
+   ══════════════════════════════════════════════════════════════════════════ */
+
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  /* Glass surface */
+  --glass-bg: rgba(248, 252, 255, 0.42);
+  --glass-bg-hover: rgba(255, 255, 255, 0.56);
+  --glass-bg-pressed: rgba(236, 246, 252, 0.36);
+  --glass-bg-subtle: rgba(248, 252, 255, 0.24);
+  --glass-bg-strong: rgba(245, 250, 255, 0.56);
+  --glass-border: rgba(255, 255, 255, 0.46);
+  --glass-border-inner: rgba(255, 255, 255, 0.44);
+  --glass-border-outer: rgba(35, 55, 70, 0.14);
+  --glass-highlight: rgba(255, 255, 255, 0.46);
+  --glass-shadow: 0 10px 30px rgba(20, 34, 46, 0.16), 0 2px 7px rgba(20, 34, 46, 0.1);
+  --glass-shadow-lg: 0 22px 54px rgba(20, 34, 46, 0.2), 0 5px 16px rgba(20, 34, 46, 0.12);
+
+  /* Text */
+  --text-primary: rgba(0, 0, 0, 0.88);
+  --text-secondary: rgba(0, 0, 0, 0.56);
+  --text-tertiary: rgba(0, 0, 0, 0.46);
+  --text-disabled: rgba(0, 0, 0, 0.24);
+  --text-on-accent: rgba(255, 255, 255, 0.96);
+
+  /* Accent */
+  --accent: hsl(211, 100%, 50%);
+  --accent-hover: hsl(211, 100%, 44%);
+  --accent-pressed: hsl(211, 100%, 38%);
+  --accent-subtle: hsl(211, 100%, 50%, 0.12);
+  --accent-ring: hsl(211, 100%, 50%, 0.4);
+
+  /* States */
+  --state-success: hsl(142, 72%, 36%);
+  --state-success-bg: hsl(142, 72%, 36%, 0.1);
+  --state-warning: hsl(38, 96%, 48%);
+  --state-warning-bg: hsl(38, 96%, 48%, 0.1);
+  --state-error: hsl(4, 90%, 52%);
+  --state-error-bg: hsl(4, 90%, 52%, 0.1);
+  --state-overdue: hsl(4, 90%, 52%);
+
+  /* Priority */
+  --priority-high: hsl(4, 90%, 52%);
+  --priority-medium: hsl(38, 96%, 48%);
+  --priority-low: hsl(211, 100%, 50%);
+  --priority-none: rgba(0, 0, 0, 0.28);
+
+  /* Sidebar */
+  --sidebar-bg: rgba(240, 248, 253, 0.3);
+
+  /* Row hover */
+  --row-hover-bg: rgba(0, 0, 0, 0.04);
+  --row-selected-bg: hsl(211, 100%, 50%, 0.1);
+  --row-selected-border: hsl(211, 100%, 50%, 0.25);
+
+  /* Divider */
+  --divider: rgba(0, 0, 0, 0.08);
+
+  /* Input */
+  --input-bg: rgba(255, 255, 255, 0.24);
+  --input-bg-focus: rgba(255, 255, 255, 0.38);
+  --material-group: rgba(248, 252, 255, 0.3);
+  --material-group-hover: rgba(255, 255, 255, 0.28);
+  --sheet-bg: rgba(246, 250, 253, 0.88);
+  --scrim-bg: rgba(18, 32, 48, 0.2);
+  --control-shadow: 0 1px 2px rgba(20, 34, 46, 0.12);
+
+  /* Focus ring */
+  --focus-ring-color: hsl(211, 100%, 50%, 0.55);
+
+  /* Rich task-note text and highlight palette */
+  --rich-text-color-adaptive-dark: hsl(215, 34%, 24%);
+  --rich-text-color-adaptive-light: hsl(215, 18%, 42%);
+  --rich-text-color-gray: hsl(215, 12%, 40%);
+  --rich-text-color-blue: hsl(211, 92%, 42%);
+  --rich-text-color-cyan: hsl(191, 84%, 32%);
+  --rich-text-color-green: hsl(145, 65%, 29%);
+  --rich-text-color-amber: hsl(38, 88%, 32%);
+  --rich-text-color-orange: hsl(24, 92%, 39%);
+  --rich-text-color-red: hsl(4, 78%, 44%);
+  --rich-text-color-purple: hsl(275, 60%, 43%);
+  --rich-highlight-yellow: hsl(50, 100%, 78%);
+  --rich-highlight-green: hsl(139, 60%, 80%);
+  --rich-highlight-blue: hsl(202, 92%, 82%);
+  --rich-highlight-pink: hsl(332, 85%, 84%);
+  --rich-highlight-orange: hsl(29, 100%, 80%);
+  --rich-highlight-purple: hsl(274, 72%, 85%);
+
+  /* Compact Spotlight chrome */
+  --spotlight-search-bg: linear-gradient(
+    105deg,
+    rgba(249, 252, 253, 0.66),
+    rgba(210, 240, 252, 0.48)
+  );
+  --spotlight-search-border: rgba(255, 255, 255, 0.54);
+  --spotlight-search-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
+  --spotlight-search-text: rgba(43, 54, 62, 0.88);
+  --spotlight-search-icon: rgba(50, 64, 73, 0.72);
+  --spotlight-search-placeholder: rgba(51, 62, 69, 0.68);
+  --spotlight-action-bg: linear-gradient(
+    145deg,
+    rgba(224, 247, 255, 0.68),
+    rgba(167, 220, 242, 0.5)
+  );
+  --spotlight-action-border: rgba(255, 255, 255, 0.48);
+  --spotlight-action-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.76);
+  --spotlight-action-icon: rgba(38, 78, 95, 0.76);
+  --spotlight-action-icon-hover: rgba(25, 63, 80, 0.94);
+  --toggle-knob: rgb(255, 255, 255);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Crystal Blue Theme Tokens
+   ══════════════════════════════════════════════════════════════════════════ */
+
+[data-theme='crystal'] {
+  color-scheme: light;
+
+  /* Glass surface with crystal blue tint */
+  --glass-bg: rgba(224, 244, 255, 0.4);
+  --glass-bg-hover: rgba(235, 248, 255, 0.8);
+  --glass-bg-pressed: rgba(210, 235, 255, 0.6);
+  --glass-bg-subtle: rgba(220, 240, 255, 0.22);
+  --glass-bg-strong: rgba(232, 247, 255, 0.54);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  --glass-border-inner: rgba(255, 255, 255, 0.48);
+  --glass-border-outer: rgba(0, 40, 80, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.7);
+  --glass-shadow: 0 8px 32px rgba(0, 30, 60, 0.1), 0 2px 8px rgba(0, 30, 60, 0.06);
+  --glass-shadow-lg: 0 24px 64px rgba(0, 30, 60, 0.15), 0 4px 16px rgba(0, 30, 60, 0.08);
+
+  /* Text */
+  --text-primary: rgba(10, 30, 50, 0.9);
+  --text-secondary: rgba(10, 30, 50, 0.6);
+  --text-tertiary: rgba(10, 30, 50, 0.4);
+  --text-disabled: rgba(10, 30, 50, 0.25);
+  --text-on-accent: rgba(255, 255, 255, 0.98);
+
+  /* Accent */
+  --accent: hsl(211, 100%, 55%);
+  --accent-hover: hsl(211, 100%, 48%);
+  --accent-pressed: hsl(211, 100%, 42%);
+  --accent-subtle: hsl(211, 100%, 55%, 0.15);
+  --accent-ring: hsl(211, 100%, 55%, 0.45);
+
+  /* States */
+  --state-success: hsl(142, 72%, 36%);
+  --state-success-bg: hsl(142, 72%, 36%, 0.1);
+  --state-warning: hsl(38, 96%, 48%);
+  --state-warning-bg: hsl(38, 96%, 48%, 0.1);
+  --state-error: hsl(4, 90%, 52%);
+  --state-error-bg: hsl(4, 90%, 52%, 0.1);
+  --state-overdue: hsl(4, 90%, 52%);
+
+  /* Priority */
+  --priority-high: hsl(4, 90%, 52%);
+  --priority-medium: hsl(38, 96%, 48%);
+  --priority-low: hsl(211, 100%, 55%);
+  --priority-none: rgba(10, 30, 50, 0.28);
+
+  /* Sidebar */
+  --sidebar-bg: rgba(224, 242, 255, 0.28);
+
+  /* Row hover */
+  --row-hover-bg: rgba(0, 80, 160, 0.04);
+  --row-selected-bg: hsl(211, 100%, 55%, 0.1);
+  --row-selected-border: hsl(211, 100%, 55%, 0.25);
+
+  /* Divider */
+  --divider: rgba(0, 60, 120, 0.08);
+
+  /* Input */
+  --input-bg: rgba(0, 60, 120, 0.04);
+  --input-bg-focus: rgba(0, 60, 120, 0.07);
+  --material-group: rgba(224, 244, 255, 0.3);
+  --material-group-hover: rgba(235, 248, 255, 0.3);
+  --sheet-bg: rgba(232, 247, 255, 0.86);
+  --scrim-bg: rgba(8, 36, 62, 0.2);
+  --control-shadow: 0 1px 2px rgba(0, 30, 60, 0.12);
+
+  /* Focus ring */
+  --focus-ring-color: hsl(211, 100%, 55%, 0.6);
+
+  /* Compact Spotlight chrome */
+  --spotlight-search-bg: linear-gradient(
+    105deg,
+    rgba(242, 250, 255, 0.92),
+    rgba(205, 238, 255, 0.88)
+  );
+  --spotlight-search-border: rgba(255, 255, 255, 0.78);
+  --spotlight-search-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+  --spotlight-search-text: rgba(25, 54, 70, 0.9);
+  --spotlight-search-icon: rgba(32, 68, 86, 0.74);
+  --spotlight-search-placeholder: rgba(35, 70, 88, 0.66);
+  --spotlight-action-bg: linear-gradient(
+    145deg,
+    rgba(220, 246, 255, 0.96),
+    rgba(170, 221, 244, 0.92)
+  );
+  --spotlight-action-border: rgba(255, 255, 255, 0.68);
+  --spotlight-action-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.78);
+  --spotlight-action-icon: rgba(29, 76, 98, 0.78);
+  --spotlight-action-icon-hover: rgba(18, 58, 78, 0.96);
+  --toggle-knob: rgb(255, 255, 255);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Dark Theme Tokens
+   ══════════════════════════════════════════════════════════════════════════ */
+
+[data-theme='dark'] {
+  /* Keep Chromium's transparent root canvas from falling back to black. */
+  color-scheme: light;
+
+  --glass-bg: rgba(22, 28, 38, 0.42);
+  --glass-bg-hover: rgba(45, 54, 68, 0.56);
+  --glass-bg-pressed: rgba(17, 22, 31, 0.38);
+  --glass-bg-subtle: rgba(20, 26, 36, 0.26);
+  --glass-bg-strong: rgba(28, 36, 50, 0.56);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-border-inner: rgba(255, 255, 255, 0.2);
+  --glass-border-outer: rgba(0, 0, 0, 0.4);
+  --glass-highlight: rgba(255, 255, 255, 0.12);
+  --glass-shadow: 0 10px 30px rgba(0, 0, 0, 0.34), 0 2px 8px rgba(0, 0, 0, 0.22);
+  --glass-shadow-lg: 0 24px 58px rgba(0, 0, 0, 0.46), 0 5px 18px rgba(0, 0, 0, 0.3);
+
+  --text-primary: rgba(255, 255, 255, 0.92);
+  --text-secondary: rgba(255, 255, 255, 0.68);
+  --text-tertiary: rgba(255, 255, 255, 0.58);
+  --text-disabled: rgba(255, 255, 255, 0.22);
+  --text-on-accent: rgba(255, 255, 255, 0.96);
+
+  --accent: hsl(211, 100%, 62%);
+  --accent-hover: hsl(211, 100%, 68%);
+  --accent-pressed: hsl(211, 100%, 56%);
+  --accent-subtle: hsl(211, 100%, 62%, 0.16);
+  --accent-ring: hsl(211, 100%, 62%, 0.45);
+
+  --state-success: hsl(142, 60%, 52%);
+  --state-success-bg: hsl(142, 60%, 52%, 0.12);
+  --state-warning: hsl(38, 96%, 60%);
+  --state-warning-bg: hsl(38, 96%, 60%, 0.12);
+  --state-error: hsl(4, 88%, 65%);
+  --state-error-bg: hsl(4, 88%, 65%, 0.12);
+  --state-overdue: hsl(4, 88%, 65%);
+
+  --priority-high: hsl(4, 88%, 65%);
+  --priority-medium: hsl(38, 96%, 60%);
+  --priority-low: hsl(211, 100%, 62%);
+  --priority-none: rgba(255, 255, 255, 0.3);
+
+  --sidebar-bg: rgba(15, 21, 31, 0.32);
+  --row-hover-bg: rgba(255, 255, 255, 0.06);
+  --row-selected-bg: hsl(211, 100%, 62%, 0.14);
+  --row-selected-border: hsl(211, 100%, 62%, 0.3);
+  --divider: rgba(255, 255, 255, 0.08);
+  --input-bg: rgba(255, 255, 255, 0.06);
+  --input-bg-focus: rgba(255, 255, 255, 0.09);
+  --material-group: rgba(17, 23, 33, 0.34);
+  --material-group-hover: rgba(255, 255, 255, 0.055);
+  --sheet-bg: rgba(28, 36, 50, 0.9);
+  --scrim-bg: rgba(0, 0, 0, 0.48);
+  --control-shadow: 0 1px 2px rgba(0, 0, 0, 0.32);
+  --focus-ring-color: hsl(211, 100%, 62%, 0.6);
+
+  --rich-text-color-adaptive-dark: hsl(213, 35%, 80%);
+  --rich-text-color-adaptive-light: hsl(210, 18%, 92%);
+  --rich-text-color-gray: hsl(215, 15%, 72%);
+  --rich-text-color-blue: hsl(207, 100%, 72%);
+  --rich-text-color-cyan: hsl(187, 82%, 69%);
+  --rich-text-color-green: hsl(143, 62%, 68%);
+  --rich-text-color-amber: hsl(43, 96%, 72%);
+  --rich-text-color-orange: hsl(27, 96%, 70%);
+  --rich-text-color-red: hsl(4, 92%, 76%);
+  --rich-text-color-purple: hsl(278, 78%, 80%);
+  --rich-highlight-yellow: hsl(48, 65%, 34%);
+  --rich-highlight-green: hsl(142, 45%, 31%);
+  --rich-highlight-blue: hsl(207, 58%, 34%);
+  --rich-highlight-pink: hsl(331, 48%, 35%);
+  --rich-highlight-orange: hsl(27, 62%, 34%);
+  --rich-highlight-purple: hsl(276, 42%, 36%);
+
+  /* Compact Spotlight chrome */
+  --spotlight-search-bg: linear-gradient(105deg, rgba(40, 47, 62, 0.64), rgba(28, 46, 60, 0.48));
+  --spotlight-search-border: rgba(255, 255, 255, 0.18);
+  --spotlight-search-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --spotlight-search-text: rgba(255, 255, 255, 0.92);
+  --spotlight-search-icon: rgba(229, 242, 248, 0.68);
+  --spotlight-search-placeholder: rgba(229, 242, 248, 0.54);
+  --spotlight-action-bg: linear-gradient(145deg, rgba(51, 80, 97, 0.66), rgba(25, 47, 62, 0.5));
+  --spotlight-action-border: rgba(255, 255, 255, 0.17);
+  --spotlight-action-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  --spotlight-action-icon: rgba(207, 235, 247, 0.76);
+  --spotlight-action-icon-hover: rgba(231, 247, 255, 0.96);
+  --toggle-knob: rgb(235, 235, 240);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   Reduced Transparency Override
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Keep the reference light material for light/crystal modes without overriding dark tokens. */
+:root:not([data-theme='dark']):not([data-reduced-transparency='true']) {
+  --spotlight-search-bg: linear-gradient(
+    108deg,
+    rgba(255, 254, 249, 0.86) 0%,
+    rgba(247, 251, 251, 0.8) 54%,
+    rgba(222, 244, 253, 0.8) 100%
+  );
+  --spotlight-search-border: rgba(255, 255, 255, 0.76);
+  --spotlight-search-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94), inset 0 -1px 0 rgba(69, 97, 110, 0.08);
+  --spotlight-search-text: rgba(54, 62, 66, 0.86);
+  --spotlight-search-icon: rgba(38, 58, 66, 0.82);
+  --spotlight-search-placeholder: rgba(63, 69, 72, 0.64);
+  --spotlight-action-bg: linear-gradient(
+    145deg,
+    rgba(239, 252, 255, 0.88) 0%,
+    rgba(204, 237, 249, 0.82) 100%
+  );
+  --spotlight-action-border: rgba(255, 255, 255, 0.7);
+  --spotlight-action-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(54, 101, 120, 0.08);
+  --spotlight-action-icon: rgba(29, 62, 75, 0.84);
+  --spotlight-action-icon-hover: rgba(20, 48, 60, 0.96);
+}
+
+:root[data-reduced-transparency='true'] {
+  --glass-bg: rgb(245, 245, 247);
+  --glass-bg-subtle: rgb(240, 240, 242);
+  --glass-bg-strong: rgb(248, 248, 250);
+  --material-group: rgb(242, 244, 247);
+  --material-group-hover: rgb(235, 239, 243);
+  --sheet-bg: rgb(248, 248, 250);
+  --spotlight-search-bg: rgb(245, 248, 250);
+  --spotlight-action-bg: rgb(225, 240, 248);
+  --blur-md: 0px;
+  --blur-lg: 0px;
+  --blur-xl: 0px;
+  --saturation: 100%;
+}
+
+:root[data-reduced-transparency='true'][data-theme='dark'] {
+  --glass-bg: rgb(28, 28, 30);
+  --glass-bg-subtle: rgb(22, 22, 24);
+  --glass-bg-strong: rgb(36, 36, 40);
+  --material-group: rgb(32, 34, 40);
+  --material-group-hover: rgb(42, 45, 52);
+  --sheet-bg: rgb(36, 36, 40);
+  --spotlight-search-bg: rgb(36, 42, 52);
+  --spotlight-action-bg: rgb(31, 50, 62);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root:not([data-reduced-transparency='false']) {
+    --glass-bg: rgb(245, 245, 247);
+    --glass-bg-subtle: rgb(240, 240, 242);
+    --glass-bg-strong: rgb(248, 248, 250);
+    --material-group: rgb(242, 244, 247);
+    --material-group-hover: rgb(235, 239, 243);
+    --sheet-bg: rgb(248, 248, 250);
+    --spotlight-search-bg: rgb(245, 248, 250);
+    --spotlight-action-bg: rgb(225, 240, 248);
+    --blur-md: 0px;
+    --blur-lg: 0px;
+    --blur-xl: 0px;
+    --saturation: 100%;
+  }
+
+  :root[data-theme='dark']:not([data-reduced-transparency='false']) {
+    --glass-bg: rgb(28, 28, 30);
+    --glass-bg-subtle: rgb(22, 22, 24);
+    --glass-bg-strong: rgb(36, 36, 40);
+    --material-group: rgb(32, 34, 40);
+    --material-group-hover: rgb(42, 45, 52);
+    --sheet-bg: rgb(36, 36, 40);
+    --spotlight-search-bg: rgb(36, 42, 52);
+    --spotlight-action-bg: rgb(31, 50, 62);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   High Contrast Override
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@media (forced-colors: active) {
+  :root {
+    --glass-border: ButtonBorder;
+    --text-primary: ButtonText;
+    --accent: Highlight;
+    --focus-ring-color: Highlight;
+  }
+}
+
+@media (prefers-contrast: more) {
+  :root {
+    --glass-bg: rgba(248, 250, 252, 0.94);
+    --glass-bg-subtle: rgba(244, 247, 250, 0.9);
+    --glass-bg-strong: rgba(252, 253, 255, 0.97);
+    --material-group: rgba(245, 248, 251, 0.96);
+    --sheet-bg: rgb(252, 253, 255);
+    --glass-border: rgba(28, 42, 54, 0.46);
+    --divider: rgba(28, 42, 54, 0.24);
+    --text-secondary: rgba(0, 0, 0, 0.76);
+    --text-tertiary: rgba(0, 0, 0, 0.68);
+  }
+
+  :root[data-theme='dark'] {
+    --glass-bg: rgba(22, 28, 38, 0.96);
+    --glass-bg-subtle: rgba(18, 24, 34, 0.94);
+    --glass-bg-strong: rgba(28, 36, 50, 0.98);
+    --material-group: rgba(20, 27, 39, 0.98);
+    --sheet-bg: rgb(28, 36, 50);
+    --glass-border: rgba(255, 255, 255, 0.5);
+    --divider: rgba(255, 255, 255, 0.28);
+    --text-secondary: rgba(255, 255, 255, 0.84);
+    --text-tertiary: rgba(255, 255, 255, 0.74);
+  }
+}

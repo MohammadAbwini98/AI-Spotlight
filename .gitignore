@@ -1,0 +1,17 @@
+node_modules
+artifacts/design-preview/
+artifacts/video-reference/
+artifacts/quarantine/
+dist
+dist-electron
+release
+.env
+.env.*
+*.db
+*.db-shm
+*.db-wal
+SpotlightData/
+out/
+*.asar
+*.tsbuildinfo
+electron.vite.config.*.mjs

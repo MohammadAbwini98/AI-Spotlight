@@ -1,0 +1,35 @@
+{
+  "profile": "medium",
+  "requestedFiles": 100000,
+  "productionBundle": true,
+  "dataPath": "C:\\Users\\moham\\AppData\\Local\\Temp\\spotlight-electron-runtime-s7irSy\\data",
+  "statesObserved": [
+    "failed",
+    "preparing",
+    "scanning",
+    "reconciling",
+    "complete"
+  ],
+  "terminalState": "complete",
+  "interruptedSessionRecovered": true,
+  "unfinishedSessions": 0,
+  "counters": {
+    "discovered": 100400,
+    "added": 100400,
+    "updated": 0,
+    "unchanged": 0,
+    "newlyUnavailable": 0,
+    "errors": 0
+  },
+  "duplicateStartRejected": true,
+  "todoIpcWorked": true,
+  "todoNavigationWorked": true,
+  "windowMoveMinimizeRestoreWorked": true,
+  "rendererFrameMaxGapMs": 16.8,
+  "rendererRoundTripMaxMs": 44.36,
+  "searchDuringSync": {
+    "samples": 254,
+    "averageMs": 22.18,
+    "maxMs": 70.28
+  }
+}

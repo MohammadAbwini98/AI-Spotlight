@@ -1,0 +1,143 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  user-select: none;
+  min-height: 48px;
+  position: relative;
+  margin: 2px var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  transition:
+    background var(--duration-hover) var(--ease-smooth),
+    border-color var(--duration-hover) var(--ease-smooth);
+}
+
+.row:hover {
+  background: var(--row-hover-bg);
+  border-color: var(--glass-border);
+}
+
+.selected {
+  background: var(--row-selected-bg) !important;
+  border-color: var(--row-selected-border);
+}
+
+.selected::before {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 4px;
+}
+
+.unavailable {
+  opacity: 0.5;
+}
+
+.iconWrapper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--glass-bg-subtle);
+  color: var(--text-secondary);
+}
+
+.selected .iconWrapper {
+  color: var(--accent);
+  background: var(--glass-highlight);
+}
+
+.folderIcon {
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+}
+
+.nameLine {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.name {
+  font-size: var(--text-md);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.highlight {
+  color: var(--accent);
+  font-weight: var(--weight-bold);
+}
+
+.pathLine {
+  display: flex;
+  align-items: center;
+}
+
+.path {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  direction: rtl; /* Truncates the left side of long paths, keeping filename visible */
+  text-align: left;
+}
+
+.offlineBadge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: var(--weight-bold);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--state-error-bg);
+  color: var(--state-error);
+}
+
+.actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.actionBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  background: transparent;
+  transition: all var(--duration-hover) var(--ease-smooth);
+
+  &:hover {
+    color: var(--accent);
+    background: var(--glass-highlight);
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "engine": "background-worker-adaptive",
+  "profile": "small",
+  "requestedFiles": 10000,
+  "indexedRows": 10040,
+  "ftsRows": 10040,
+  "coldInitial": {
+    "durationMs": 3303,
+    "throughputPerSecond": 3040,
+    "counters": {
+      "discovered": 10040,
+      "added": 10040,
+      "updated": 0,
+      "unchanged": 0,
+      "newlyUnavailable": 0,
+      "restored": 0,
+      "skipped": 0,
+      "excluded": 0,
+      "errors": 0,
+      "directoriesVisited": 41,
+      "filesVisited": 10000,
+      "bytesRepresented": 0
+    }
+  },
+  "warmReconciliation": {
+    "durationMs": 560,
+    "throughputPerSecond": 17929,
+    "counters": {
+      "discovered": 10040,
+      "added": 0,
+      "updated": 0,
+      "unchanged": 10040,
+      "newlyUnavailable": 0,
+      "restored": 0,
+      "skipped": 0,
+      "excluded": 0,
+      "errors": 0,
+      "directoriesVisited": 41,
+      "filesVisited": 10000,
+      "bytesRepresented": 0
+    }
+  },
+  "oneFileModification": {
+    "durationMs": 8,
+    "counters": {
+      "discovered": 1,
+      "added": 0,
+      "updated": 1,
+      "unchanged": 0,
+      "newlyUnavailable": 0,
+      "restored": 0,
+      "skipped": 0,
+      "excluded": 0,
+      "errors": 0,
+      "directoriesVisited": 0,
+      "filesVisited": 1,
+      "bytesRepresented": 7
+    }
+  },
+  "oneFileDeletion": {
+    "durationMs": 24,
+    "counters": {
+      "discovered": 0,
+      "added": 0,
+      "updated": 0,
+      "unchanged": 0,
+      "newlyUnavailable": 1,
+      "restored": 0,
+      "skipped": 0,
+      "excluded": 0,
+      "errors": 0,
+      "directoriesVisited": 0,
+      "filesVisited": 0,
+      "bytesRepresented": 0
+    }
+  },
+  "cancellationLatencyMs": 0.68,
+  "peakRssDeltaBytes": 28487680,
+  "mainEventLoopDelayMs": {
+    "mean": 16.23,
+    "max": 39.65,
+    "p99": 29.66
+  },
+  "searchLatencyMs": {
+    "idle": {
+      "samples": 20,
+      "average": 0.07,
+      "p50": 0.07,
+      "p95": 0.08,
+      "p99": 0.14,
+      "max": 0.14
+    },
+    "duringInitialAndReconcile": {
+      "samples": 36,
+      "average": 9.21,
+      "p50": 8.73,
+      "p95": 17.36,
+      "p99": 18.79,
+      "max": 18.79
+    }
+  },
+  "databaseBytes": 10031104,
+  "walBytesAfterPassiveCheckpoint": 8483112
+}

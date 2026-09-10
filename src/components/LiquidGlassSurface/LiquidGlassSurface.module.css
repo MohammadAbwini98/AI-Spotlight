@@ -1,0 +1,86 @@
+.surface {
+  position: relative;
+  border-radius: var(--radius-xl);
+  backdrop-filter: blur(var(--blur-lg)) saturate(var(--saturation));
+  -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(var(--saturation));
+  background-color: var(--glass-bg);
+  background-image: var(--glass-sheen);
+  border: 1px solid var(--glass-border);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background: var(--glass-specular);
+  opacity: 0.72;
+}
+
+.surface > :not(.inner) {
+  position: relative;
+  z-index: 2;
+}
+
+/* Inner highlight ring (top edge) */
+.inner {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid var(--glass-border-inner);
+  pointer-events: none;
+  z-index: 3;
+  box-shadow: inset 0 -1px 0 var(--glass-border-outer);
+  mask-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0) 58%);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.78) 0%,
+    rgba(255, 255, 255, 0) 58%
+  );
+}
+
+.elevated {
+  box-shadow: none;
+}
+
+/* Variants */
+.variant-default {
+  background-color: var(--glass-bg);
+}
+
+.variant-subtle {
+  background-color: var(--glass-bg-subtle);
+  backdrop-filter: blur(var(--blur-md)) saturate(var(--saturation));
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(var(--saturation));
+}
+
+.variant-strong {
+  background-color: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--blur-xl)) saturate(var(--saturation));
+  -webkit-backdrop-filter: blur(var(--blur-xl)) saturate(var(--saturation));
+}
+
+.variant-sidebar {
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--divider);
+  border-radius: 0;
+  backdrop-filter: blur(var(--blur-md)) saturate(var(--saturation));
+  -webkit-backdrop-filter: blur(var(--blur-md)) saturate(var(--saturation));
+}
+
+.variant-transparent {
+  background-color: transparent;
+  background-image: none;
+  border-color: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.variant-transparent::before,
+.variant-transparent > .inner {
+  display: none;
+}
