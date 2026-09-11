@@ -15,6 +15,7 @@ interface SearchViewProps {
   onExpand: (expanded: boolean) => void
   onOpenTodo: () => void
   onOpenSettings: () => void
+  onOpenAi: () => void
 }
 
 let requestId = 0
@@ -35,7 +36,8 @@ export function SearchView({
   isExpanded,
   onExpand,
   onOpenTodo,
-  onOpenSettings
+  onOpenSettings,
+  onOpenAi
 }: SearchViewProps): React.ReactElement {
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<FileEntry[]>([])
@@ -236,6 +238,7 @@ export function SearchView({
           query={query}
           onChange={handleQueryChange}
           onFocus={handleSearchFocus}
+          onAiClick={onOpenAi}
           onTodoClick={onOpenTodo}
           onSyncClick={handleSync}
           onSettingsClick={onOpenSettings}

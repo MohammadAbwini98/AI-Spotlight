@@ -18,6 +18,7 @@ import { registerSearchHandlers } from './ipc/search.ipc'
 import { registerIndexerHandlers } from './ipc/indexer.ipc'
 import { registerTodoHandlers } from './ipc/todo.ipc'
 import { registerSettingsHandlers } from './ipc/settings.ipc'
+import { registerAiHandlers, shutdownAi } from './ipc/ai.ipc'
 import {
   startInitialScan,
   hasScanCompleted,
@@ -81,6 +82,7 @@ app.whenReady().then(async () => {
   registerIndexerHandlers()
   registerTodoHandlers()
   registerSettingsHandlers()
+  registerAiHandlers()
 
   // Additional window control handlers
   registerTrustedListener(IPC.APP_HIDE_WINDOW, () => mainWindow?.hide())
@@ -119,7 +121,12 @@ app.on('before-quit', (event) => {
   if (shutdownStarted) return
   shutdownStarted = true
   event.preventDefault()
-  void shutdownIndexer().finally(() => app.quit())
+  // Cancel generation, close the client stream, terminate llama-server so no
+  // orphan process remains, then quit. Bounded wait inside each step.
+  void shutdownIndexer()
+    .catch(() => undefined)
+    .finally(() => shutdownAi().catch(() => undefined))
+    .finally(() => app.quit())
 })
 
 app.on('will-quit', () => {

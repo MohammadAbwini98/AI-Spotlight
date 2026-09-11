@@ -16,7 +16,14 @@ import type {
   CreateListInput,
   UpsertNoteInput,
   AppSettings,
-  ApiResult
+  ApiResult,
+  AiChatRequest,
+  AiCompletion,
+  AiConversation,
+  AiConversationMessage,
+  AiModelInfo,
+  AiRuntimeStatus,
+  AiTokenDelta
 } from '../shared/types'
 
 // Typed window.electronAPI surface exposed to the renderer
@@ -120,6 +127,49 @@ const api = {
     hide: (): void => ipcRenderer.send(IPC.APP_HIDE_WINDOW),
     quit: (): void => ipcRenderer.send(IPC.APP_QUIT),
     setHeight: (height: number): void => ipcRenderer.send(IPC.APP_SET_HEIGHT, height)
+  },
+
+  // ─── AI Assistant (local runtime) ─────────────────────────────────────────
+  // Narrow typed domain API. No fetch/http/filesystem/spawn/shell access.
+  ai: {
+    getStatus: (): Promise<ApiResult<AiRuntimeStatus>> => ipcRenderer.invoke(IPC.AI_GET_STATUS),
+    ensureReady: (): Promise<ApiResult<AiRuntimeStatus>> => ipcRenderer.invoke(IPC.AI_ENSURE_READY),
+    chatStart: (request: AiChatRequest): Promise<ApiResult<{ requestId: string }>> =>
+      ipcRenderer.invoke(IPC.AI_CHAT_START, request),
+    chatCancel: (requestId: string): Promise<ApiResult<void>> =>
+      ipcRenderer.invoke(IPC.AI_CHAT_CANCEL, requestId),
+    onDelta: (cb: (delta: AiTokenDelta) => void): (() => void) => {
+      const handler = (_: Electron.IpcRendererEvent, delta: AiTokenDelta): void => cb(delta)
+      ipcRenderer.on(IPC.AI_CHAT_DELTA, handler)
+      return () => ipcRenderer.removeListener(IPC.AI_CHAT_DELTA, handler)
+    },
+    onComplete: (cb: (completion: AiCompletion) => void): (() => void) => {
+      const handler = (_: Electron.IpcRendererEvent, completion: AiCompletion): void =>
+        cb(completion)
+      ipcRenderer.on(IPC.AI_CHAT_COMPLETE, handler)
+      return () => ipcRenderer.removeListener(IPC.AI_CHAT_COMPLETE, handler)
+    },
+    onError: (
+      cb: (error: { requestId: string; code: string; message: string }) => void
+    ): (() => void) => {
+      const handler = (
+        _: Electron.IpcRendererEvent,
+        error: { requestId: string; code: string; message: string }
+      ): void => cb(error)
+      ipcRenderer.on(IPC.AI_CHAT_ERROR, handler)
+      return () => ipcRenderer.removeListener(IPC.AI_CHAT_ERROR, handler)
+    },
+    newConversation: (title?: string): Promise<ApiResult<AiConversation>> =>
+      ipcRenderer.invoke(IPC.AI_NEW_CONVERSATION, title),
+    getConversations: (): Promise<ApiResult<AiConversation[]>> =>
+      ipcRenderer.invoke(IPC.AI_GET_CONVERSATIONS),
+    getMessages: (conversationId: string): Promise<ApiResult<AiConversationMessage[]>> =>
+      ipcRenderer.invoke(IPC.AI_GET_MESSAGES, conversationId),
+    deleteConversation: (conversationId: string): Promise<ApiResult<void>> =>
+      ipcRenderer.invoke(IPC.AI_DELETE_CONVERSATION, conversationId),
+    getModelInfo: (): Promise<ApiResult<AiModelInfo>> => ipcRenderer.invoke(IPC.AI_GET_MODEL_INFO),
+    selectModel: (): Promise<ApiResult<AiModelInfo>> => ipcRenderer.invoke(IPC.AI_SELECT_MODEL),
+    shutdown: (): Promise<ApiResult<void>> => ipcRenderer.invoke(IPC.AI_SHUTDOWN)
   }
 }
 

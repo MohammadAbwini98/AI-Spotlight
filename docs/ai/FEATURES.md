@@ -1,6 +1,6 @@
 # FEATURES.md — Confirmed DeepDive Feature Inventory
 
-> **Last Updated**: 2026-07-22
+> **Last Updated**: 2026-09-11
 
 ## Desktop shell and design
 
@@ -47,6 +47,16 @@
 - Recent/frequent files panel with an explicit accessible Back action.
 - Main-process runtime validation, top-frame authorization, and renderer-writable settings whitelisting for every privileged IPC operation.
 
+## Local AI assistant
+
+- Dedicated AI action button (sparkles glyph) first in the compact Spotlight actions; opens a full AI Chat screen without changing search input behavior.
+- App navigation is `search | ai | todo | settings`; AI reuses the 640px workspace height so no new native geometry case exists.
+- Streaming local responses with Stop/restart, retry, new chat, conversation picker, persisted history (migration 011), assistant copy, code blocks, safe Markdown, multiline composer, stick-to-bottom autoscroll, empty/error/setup states, and keyboard map (Enter send, Shift+Enter newline, Escape stop/back).
+- Lazy llama.cpp runtime: starts only from AI Chat, stays loaded between prompts, survives window hiding, terminates on quit; single concurrent generation; bounded CPU threads with renderer/indexing reserve.
+- Gemma 4 12B Q4_K_M manifest (`resources/ai/model-manifest.json`, no fabricated checksum); model resolved from explicit override or managed `%LOCALAPPDATA%\SpotlightTodo\models`, validated before launch, importable offline through a native dialog.
+- Settings AI section: model, runtime status, model path, trusted model selection.
+- Search/AI privacy separation: search uses SQLite only; the model receives only explicitly submitted text.
+
 ## Storage and packaging
 
 - SQLite WAL database with automatic versioned migrations.
@@ -61,6 +71,7 @@
 ## Not fully verified
 
 - Public-certificate and clean-machine Portable/Setup runtime.
+- Real Gemma 4 12B model load, streaming, Stop, and quit-cleanliness with the packaged app (runtime + GGUF provisioned offline; not yet executed).
 - Full SQLite encryption at rest and key recovery.
 - One-million-file execution on this workstation.
 - OneDrive/network/ACL/storage-full hardware and environment scenarios.

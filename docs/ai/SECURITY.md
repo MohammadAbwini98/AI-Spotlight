@@ -91,6 +91,10 @@ docs/**
 - Production React/CSS assets use the privileged same-origin `spotlight://renderer` scheme; requests are confined to the packaged renderer root and traversal or other hosts/schemes are rejected while `webSecurity` remains enabled.
 - Denied renderer navigation, new windows, webviews, downloads, permission requests, and permission checks.
 - Privileged IPC accepts only the active application WebContents, its top frame, and the exact trusted `spotlight://renderer` origin (or explicit development origin), then applies channel-specific runtime validation and bounds.
+- AI IPC follows the same trust boundary: a narrow `window.electronAPI.ai` domain API (no fetch/http/filesystem/spawn/shell), per-channel runtime validation of roles, ids, message counts, and character budgets, and single-generation enforcement.
+- The llama-server child process is the only `spawn` owner (`shell: false`, `windowsHide: true`), bound to `127.0.0.1` with a free loopback port; the renderer never contacts it directly and local AI traffic never leaves the main process.
+- Model files are validated (existence, regular file, `.gguf`, manifest filename, size bounds, optional SHA-256) before launch; renderer paths are never accepted and the machine is never scanned for models.
+- Only visible user/assistant text persists (`ai_conversations`/`ai_messages`); reasoning, KV cache, and diagnostics never do. Conversations stay local; no external network is required.
 - Renderer-writable settings are whitelisted; scan roots cannot be changed through the generic setter.
 - Relative, UNC/device, whole-drive, system, profile-root, AppData, `.ssh`, and `.gnupg` scan roots are rejected.
 - Active executable/script/installer/shortcut/registry/URL file types cannot be launched through `shell.openPath`.

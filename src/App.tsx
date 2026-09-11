@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion, LayoutGroup, MotionConfig } from 'framer-motion'
 import { SearchView } from './features/search/SearchView'
+import { AiChatView } from './features/ai/AiChatView'
 import { TodoView } from './features/todo/TodoView'
 import { SettingsView } from './features/settings/SettingsView'
 import type { AppSettings } from '../electron/shared/types'
-import { springs, COMPACT_HEIGHT, SEARCH_HEIGHT, TODO_HEIGHT } from './design/motion'
+import { springs, COMPACT_HEIGHT, SEARCH_HEIGHT, TODO_HEIGHT, AI_HEIGHT } from './design/motion'
 import { resolveTheme } from './design/theme'
 import styles from './App.module.css'
 
-type AppView = 'search' | 'todo' | 'settings'
+type AppView = 'search' | 'ai' | 'todo' | 'settings'
 
 export default function App(): React.ReactElement {
   const [view, setView] = useState<AppView>('search')
@@ -59,6 +60,9 @@ export default function App(): React.ReactElement {
       if (e.key === 'Escape') {
         // Let modal surfaces dismiss themselves before the app changes screens.
         if (document.querySelector('[role="dialog"][aria-modal="true"]')) return
+        // While the AI is generating, Escape cancels generation inside the AI
+        // view instead of navigating away.
+        if (view === 'ai' && document.documentElement.dataset.aiGenerating === 'true') return
 
         if (view !== 'search' || isExpanded) {
           setView('search')
@@ -77,7 +81,9 @@ export default function App(): React.ReactElement {
       ? COMPACT_HEIGHT
       : view === 'todo'
         ? TODO_HEIGHT
-        : SEARCH_HEIGHT
+        : view === 'ai'
+          ? AI_HEIGHT
+          : SEARCH_HEIGHT
 
   useEffect(() => {
     // Notify electron to resize the native window
@@ -132,6 +138,19 @@ export default function App(): React.ReactElement {
                   onOpenSettings={() => {
                     setView('settings')
                     setIsExpanded(true)
+                  }}
+                  onOpenAi={() => {
+                    setView('ai')
+                    setIsExpanded(true)
+                  }}
+                />
+              )}
+              {view === 'ai' && (
+                <AiChatView
+                  key="ai"
+                  onBack={() => {
+                    setView('search')
+                    setIsExpanded(false)
                   }}
                 />
               )}

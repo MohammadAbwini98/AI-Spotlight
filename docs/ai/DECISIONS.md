@@ -196,3 +196,27 @@
 **Alternatives Considered**: A separate editor route/window was rejected by the product requirement. Storing only HTML was rejected because it would degrade search and export. Updating on every keystroke was rejected because it would amplify SQLite writes.
 
 **Related Files**: `src/features/todo/NoteEditor.tsx`, `src/features/todo/TaskNotesEditor.tsx`, `src/features/todo/rich-text-dom.ts`, `electron/main/ipc/todo.ipc.ts`, `electron/main/db/migrations/010_rich_task_notes.sql`
+
+### 2026-09-11 — Dedicated Local AI Chat on llama.cpp + Gemma 4 12B
+
+**Decision**: Add a dedicated `ai` route with its own chat screen, served by a lazy main-process runtime (`AiRuntimeService`) driving a loopback-only `llama-server` child process and the Gemma 4 12B Q4_K_M GGUF. Spotlight search stays SQLite/FTS5-only and can never start the runtime.
+
+**Reason**: A hybrid search/AI input would burn inference resources on every keystroke and blur the privacy boundary. Separation keeps search instant/deterministic and runs the model only on explicit AI interaction.
+
+**Impact**: New `src/features/ai/`, `electron/main/ai/`, `AI_*` IPC channels with runtime validation, migration 011 conversations, Settings AI section, `resources/ai` packaging slot, and 46 new tests (133 total).
+
+**Alternatives Considered**: Search-box hybrid (rejected: resource/privacy cost per keystroke); mandatory Ollama (rejected: external install requirement; provider seam left open for a future optional adapter); bundling the GGUF in the installer/asar (rejected: multi-GB redistribution on every upgrade).
+
+**Related Files**: `src/features/ai/`, `electron/main/ai/`, `electron/main/ipc/ai.ipc.ts`, `electron/main/db/migrations/011_ai_chat.sql`, `resources/ai/model-manifest.json`
+
+### 2026-09-11 — Model Outside app.asar with Offline Import
+
+**Decision**: Resolve the GGUF from an explicit env override or the managed `%LOCALAPPDATA%\SpotlightTodo\models` directory, importable once through a native file dialog with main-process validation. App upgrades replace runtime + manifest but never the model directory.
+
+**Reason**: Offline/restricted environments cannot download multi-GB models; re-shipping the weights per release wastes bandwidth and risks deletion.
+
+**Impact**: Missing/invalid-model UX is first-class; SHA-256 enforcement stays configurable until a canonical artifact hash is published.
+
+**Alternatives Considered**: Hugging Face download-at-runtime (rejected as the only path; no network dependency at runtime).
+
+**Related Files**: `electron/main/ai/model-resolver.ts`, `electron/main/ai/model-validator.ts`, `resources/ai/README.md`

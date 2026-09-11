@@ -93,6 +93,8 @@ export const resultRow: Variants = {
 export const COMPACT_HEIGHT = 60
 export const SEARCH_HEIGHT = 480
 export const TODO_HEIGHT = 640
+/** AI chat reuses the larger workspace height to avoid new native geometry cases. */
+export const AI_HEIGHT = 640
 
 // ─── Hover/press button motion ────────────────────────────────────────────
 

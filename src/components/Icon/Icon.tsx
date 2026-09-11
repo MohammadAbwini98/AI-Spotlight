@@ -20,6 +20,7 @@ import plusUrl from '../../assets/zappicon/plus.svg'
 import closeUrl from '../../assets/zappicon/xmark.svg'
 import backUrl from '../../assets/zappicon/arrow-left-small.svg'
 import checkUrl from '../../assets/zappicon/check.svg'
+import aiUrl from '../../assets/zappicon/sparkles.svg'
 import styles from './Icon.module.css'
 
 const iconUrls = {
@@ -43,7 +44,8 @@ const iconUrls = {
   plus: plusUrl,
   close: closeUrl,
   back: backUrl,
-  check: checkUrl
+  check: checkUrl,
+  ai: aiUrl
 } as const
 
 export type IconName = keyof typeof iconUrls

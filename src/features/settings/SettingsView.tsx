@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import type { AppSettings } from '../../../electron/shared/types'
+import type { AiModelInfo, AiRuntimeStatus, AppSettings } from '../../../electron/shared/types'
 import { slideUp } from '../../design/motion'
 import { LiquidGlassSurface } from '../../components/LiquidGlassSurface/LiquidGlassSurface'
 import styles from './SettingsView.module.css'
@@ -18,12 +18,31 @@ export function SettingsView({
   onUpdateSetting
 }: SettingsViewProps): React.ReactElement {
   const [dataPath, setDataPath] = useState<string | null>(null)
+  const [aiModel, setAiModel] = useState<AiModelInfo | null>(null)
+  const [aiStatus, setAiStatus] = useState<AiRuntimeStatus | null>(null)
 
   useEffect(() => {
     void window.electronAPI.stats.getDataPath().then((result) => {
       if (result.ok) setDataPath(result.data)
     })
+    void window.electronAPI.ai.getModelInfo().then((result) => {
+      if (result.ok) setAiModel(result.data)
+    })
+    void window.electronAPI.ai.getStatus().then((result) => {
+      if (result.ok) setAiStatus(result.data)
+    })
   }, [])
+
+  const handleSelectAiModel = (): void => {
+    void window.electronAPI.ai.selectModel().then((result) => {
+      if (result.ok) {
+        setAiModel(result.data)
+        void window.electronAPI.ai.getStatus().then((status) => {
+          if (status.ok) setAiStatus(status.data)
+        })
+      }
+    })
+  }
 
   return (
     <LiquidGlassSurface
@@ -179,6 +198,46 @@ export function SettingsView({
                   <span className={styles.settingName}>Active database location</span>
                   <code className={styles.dataPath}>{dataPath ?? 'Loading…'}</code>
                 </div>
+              </div>
+            </div>
+          </section>
+
+          <section className={styles.section}>
+            <h2 className={styles.sectionTitle}>AI Assistant</h2>
+            <div className={styles.settingGroup}>
+              <div className={styles.settingRow}>
+                <div className={styles.settingInfo}>
+                  <span className={styles.settingName}>Model</span>
+                  <span className={styles.settingDesc}>
+                    {aiModel
+                      ? `${aiModel.name} (${aiModel.quantization}) — local only`
+                      : 'Loading…'}
+                  </span>
+                </div>
+              </div>
+              <div className={styles.settingRow}>
+                <div className={styles.settingInfo}>
+                  <span className={styles.settingName}>Runtime status</span>
+                  <span className={styles.settingDesc}>
+                    {aiStatus ? aiStatus.state : 'Loading…'}
+                  </span>
+                </div>
+              </div>
+              <div className={styles.settingRow}>
+                <div className={styles.settingInfo}>
+                  <span className={styles.settingName}>Model file</span>
+                  <code className={styles.dataPath}>
+                    {aiModel ? (aiModel.path ?? 'Not installed') : 'Loading…'}
+                  </code>
+                </div>
+                <button
+                  className={styles.select}
+                  type="button"
+                  onClick={handleSelectAiModel}
+                  aria-label="Select AI model file"
+                >
+                  Select…
+                </button>
               </div>
             </div>
           </section>

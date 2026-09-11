@@ -1,4 +1,4 @@
-export const EXPECTED_MIGRATION_VERSION = 10
+export const EXPECTED_MIGRATION_VERSION = 11
 
 export interface MigrationDescriptor {
   filename: string

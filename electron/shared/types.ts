@@ -203,3 +203,91 @@ export interface ApiError {
 }
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; error: ApiError }
+
+// ─── AI Assistant (local Gemma via llama.cpp) ───────────────────────────────
+// The renderer talks to the AI subsystem only through the typed preload
+// `window.electronAPI.ai` domain API. Search stays on SQLite/FTS5 and never
+// touches these types.
+
+export type AiRole = 'system' | 'user' | 'assistant'
+
+export interface AiMessage {
+  id: string
+  role: AiRole
+  content: string
+}
+
+export interface AiChatRequest {
+  requestId: string
+  conversationId?: string
+  messages: AiMessage[]
+}
+
+export type AiRuntimeState = 'stopped' | 'starting' | 'loading' | 'ready' | 'generating' | 'error'
+
+export type AiErrorCode =
+  | 'AI_RUNTIME_NOT_FOUND'
+  | 'AI_RUNTIME_START_FAILED'
+  | 'AI_RUNTIME_TIMEOUT'
+  | 'AI_MODEL_NOT_FOUND'
+  | 'AI_MODEL_INVALID'
+  | 'AI_MODEL_HASH_MISMATCH'
+  | 'AI_MODEL_UNSUPPORTED'
+  | 'AI_SERVER_UNAVAILABLE'
+  | 'AI_GENERATION_FAILED'
+  | 'AI_GENERATION_CANCELLED'
+  | 'AI_REQUEST_TOO_LARGE'
+  | 'AI_TOO_MANY_MESSAGES'
+  | 'AI_BUSY'
+  | 'AI_OUT_OF_MEMORY'
+  | 'AI_NOT_READY'
+
+export interface AiRuntimeStatus {
+  state: AiRuntimeState
+  /** Model id from the model manifest (for example "gemma-4-12b-it-q4-k-m"). */
+  modelId?: string
+  /** Loopback base URL of the managed llama-server instance. Never exposed with a path. */
+  errorCode?: AiErrorCode
+  error?: string
+}
+
+export interface AiTokenDelta {
+  requestId: string
+  text: string
+}
+
+export interface AiCompletion {
+  requestId: string
+  finishReason?: string
+}
+
+export interface AiConversation {
+  id: string
+  title: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AiConversationMessage extends AiMessage {
+  conversationId: string
+  createdAt: string
+}
+
+export interface AiModelInfo {
+  modelId: string
+  name: string
+  quantization: string
+  filename: string
+  /** Absolute path when a model file is installed, otherwise null. */
+  path: string | null
+  installed: boolean
+  valid: boolean
+  runtime: string
+}
+
+// Renderer-enforced request bounds. The main process re-validates every value
+// at runtime (see electron/main/ipc/security.ts) and never trusts these.
+export const AI_MAX_MESSAGE_CHARS = 8000
+export const AI_MAX_MESSAGES_PER_REQUEST = 64
+export const AI_MAX_REQUEST_CHARS = 32000
+export const AI_MAX_CONVERSATIONS = 200

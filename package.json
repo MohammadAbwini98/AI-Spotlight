@@ -79,6 +79,10 @@
       {
         "from": "electron/main/db/migrations",
         "to": "migrations"
+      },
+      {
+        "from": "resources/ai",
+        "to": "ai"
       }
     ],
     "win": {

@@ -9,6 +9,7 @@ interface SearchBarProps {
   query: string
   onChange: (value: string) => void
   onFocus: () => void
+  onAiClick: () => void
   onTodoClick: () => void
   onSyncClick: () => void
   onSettingsClick: () => void
@@ -21,6 +22,7 @@ function SearchBarComponent({
   query,
   onChange,
   onFocus,
+  onAiClick,
   onTodoClick,
   onSyncClick,
   onSettingsClick,
@@ -100,6 +102,18 @@ function SearchBarComponent({
             animate="visible"
             exit="hidden"
           >
+            <LiquidGlassSurface
+              className={styles.actionBtn}
+              variant="strong"
+              elevated
+              as="button"
+              onClick={onAiClick}
+              title="Open AI Assistant"
+              aria-label="Open AI Assistant"
+            >
+              <Icon name="ai" size={24} className={styles.actionIcon} />
+            </LiquidGlassSurface>
+
             <LiquidGlassSurface
               className={styles.actionBtn}
               variant="strong"

@@ -1,10 +1,10 @@
 # TESTING.md — Test and Validation Strategy
 
-> **Last Updated**: 2026-07-22
+> **Last Updated**: 2026-09-11
 
 ## Automated suites
 
-- `npm test`: 87 tests across theme, reduced-motion integration, transparent/native-frame and exterior-shadow shell policy, compact focus/static-sync behavior and dark materials, persistent focus-loss visibility, Settings loading/error states, Todo note/status/rich-text interactions, date lifecycle, dark native menus and statistics, task/list input bounds, roots, exclusions, sync protocol, data migration, semantic glass surfaces, bidirectional/collapsible categorized search, history-aware Recent Files, file-type classification, Recent Files/animation performance, global-shortcut/tray-startup recovery, confined same-origin packaged renderer/IPC mapping, public/private Portable/Setup release planning and signing preflight, portable persistence, OneDrive fallback, pinned Node toolchain execution, malicious IPC, unsafe launch types, migration completeness, disk-full classification, and package tampering.
+- `npm test`: 133 tests across 28 files: all previous coverage plus AI runtime configuration, model manifest/resolution/validation, llama.cpp loopback/spawn/health/SSE/error-taxonomy policy, AI IPC validation and narrow preload surface, AI conversation persistence and migration 011 schema, provider abstraction and search/AI separation audits, safe Markdown projection, and AI chat-view rendering states.
 - `npm run test:sync`: Electron-ABI real-file/worker/SQLite/WAL/FTS integration.
 - `npm run typecheck`: Node and web TypeScript projects.
 - `npm run build`: production main/worker/preload/renderer bundles.
@@ -49,6 +49,7 @@
 
 ## Remaining environment tests
 
+- Real Gemma 4 12B smoke test where the runtime/model are provisioned: runtime starts, model loads, `Respond with exactly: LOCAL_AI_OK` streams back, Stop works, a second prompt reuses the loaded model, and quit leaves no orphan `llama-server.exe`. Not executed on this workstation (no runtime/GGUF present).
 - Authenticode-signed Portable/Setup executables on a clean offline Windows machine.
 - One-million-file execution.
 - ACL-denied, offline OneDrive, network, HDD/external, storage-full, and read-only media.

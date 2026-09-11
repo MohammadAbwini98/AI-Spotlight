@@ -10,6 +10,9 @@ import { isTrustedRendererUrl } from '../renderer-protocol'
 import {
   TASK_TITLE_MAX_LENGTH,
   TODO_LIST_NAME_MAX_LENGTH,
+  AI_MAX_MESSAGE_CHARS,
+  AI_MAX_MESSAGES_PER_REQUEST,
+  AI_MAX_REQUEST_CHARS,
   type ApiResult
 } from '../../shared/types'
 
@@ -176,6 +179,31 @@ export function validateIpcArguments(channel: string, args: unknown[]): void {
         throw new Error('Window height is not an approved layout size.')
       }
       return
+    case IPC.AI_GET_STATUS:
+    case IPC.AI_ENSURE_READY:
+    case IPC.AI_GET_CONVERSATIONS:
+    case IPC.AI_GET_MODEL_INFO:
+    case IPC.AI_SELECT_MODEL:
+    case IPC.AI_SHUTDOWN:
+      exactArgs(args, 0)
+      return
+    case IPC.AI_CHAT_START:
+      exactArgs(args, 1)
+      validateAiChatRequest(args[0])
+      return
+    case IPC.AI_CHAT_CANCEL:
+    case IPC.AI_DELETE_CONVERSATION:
+      exactArgs(args, 1)
+      boundedRequestId(args[0])
+      return
+    case IPC.AI_NEW_CONVERSATION:
+      maximumArgs(args, 1)
+      if (args[0] !== undefined) boundedString(args[0], 'title', 0, 120)
+      return
+    case IPC.AI_GET_MESSAGES:
+      exactArgs(args, 1)
+      boundedRequestId(args[0])
+      return
     default:
       exactArgs(args, 0)
   }
@@ -186,6 +214,39 @@ function validateSearchQuery(value: unknown): void {
   boundedString(query.text, 'query.text', 0, 512)
   nonNegativeInteger(query.requestId, 'query.requestId')
   if (query.limit !== undefined) boundedInteger(query.limit, 'query.limit', 1, 200)
+}
+
+const AI_ROLES = new Set(['system', 'user', 'assistant'])
+const AI_REQUEST_ID_PATTERN = /^[A-Za-z0-9-]{1,128}$/
+
+function boundedRequestId(value: unknown): string {
+  const id = boundedString(value, 'request id', 1, 128)
+  if (!AI_REQUEST_ID_PATTERN.test(id)) throw new Error('Request id is invalid.')
+  return id
+}
+
+/** Runtime validation for AI chat requests. TypeScript types are not trusted. */
+function validateAiChatRequest(value: unknown): void {
+  const request = record(value, 'chat request')
+  boundedRequestId(request.requestId)
+  if (request.conversationId !== undefined) boundedRequestId(request.conversationId)
+  if (!Array.isArray(request.messages)) throw new Error('Chat messages must be an array.')
+  if (request.messages.length < 1 || request.messages.length > AI_MAX_MESSAGES_PER_REQUEST) {
+    throw new Error(`Chat must contain 1-${AI_MAX_MESSAGES_PER_REQUEST} messages.`)
+  }
+  let totalChars = 0
+  for (const message of request.messages) {
+    const entry = record(message, 'chat message')
+    boundedRequestId(entry.id)
+    if (typeof entry.role !== 'string' || !AI_ROLES.has(entry.role)) {
+      throw new Error('Chat message role is invalid.')
+    }
+    const content = boundedString(entry.content, 'chat message content', 0, AI_MAX_MESSAGE_CHARS)
+    totalChars += content.length
+  }
+  if (totalChars > AI_MAX_REQUEST_CHARS) {
+    throw new Error(`Chat request exceeds ${AI_MAX_REQUEST_CHARS} characters.`)
+  }
 }
 
 function validateCreateTask(value: unknown): void {

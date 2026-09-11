@@ -1355,3 +1355,47 @@
 - Local git identity: `MohammadAbwini98 <MohammadAbwini98@users.noreply.github.com>` — change with `git config user.name/user.email` if a different identity is wanted.
 
 ---
+
+### 2026-09-11 — Muse Spark (OpenCode) — Dedicated Local AI Chat (llama.cpp + Gemma 4 12B)
+
+**Agent**: Muse Spark (OpenCode)
+**Task**: Introduce a clean dedicated local AI subsystem (Gemma 4 12B Q4_K_M via loopback llama-server) with an AI button + chat screen architecturally separated from Spotlight file search.
+
+**Files Created**:
+- `src/features/ai/AiChatView.tsx`, `AiChatView.module.css`, `AiChatHeader.tsx`, `AiConversation.tsx`, `AiMessage.tsx`, `AiComposer.tsx`, `AiRuntimeStatus.tsx`, `ai-markdown.ts`
+- `src/assets/zappicon/sparkles.svg`
+- `electron/main/ai/ai-errors.ts`, `ai-config.ts`, `ai-provider.ts`, `ai-runtime.service.ts`, `ai-session-manager.ts`, `llama-client.ts`, `llama-process-manager.ts`, `model-resolver.ts`, `model-validator.ts`
+- `electron/main/ipc/ai.ipc.ts`
+- `electron/main/db/migrations/011_ai_chat.sql`
+- `resources/ai/model-manifest.json`, `resources/ai/README.md`
+- `tests/ai-config.spec.ts`, `tests/ai-model.spec.ts`, `tests/ai-runtime.spec.ts`, `tests/ai-ipc.spec.ts`, `tests/ai-session.spec.ts`, `tests/ai-separation.spec.ts`, `tests/ai-markdown.spec.ts`, `tests/ai-chat-view.spec.tsx`
+
+**Files Modified**:
+- `src/App.tsx` — `search | ai | todo | settings` view, AI height, Escape-generating guard
+- `src/features/search/SearchBar.tsx` — `onAiClick` + first-position AI button
+- `src/features/search/SearchView.tsx` — `onOpenAi` passthrough (query path untouched)
+- `src/features/settings/SettingsView.tsx` — restrained AI section (model/status/path/Select)
+- `src/components/Icon/Icon.tsx`, `src/design/motion.ts` (`AI_HEIGHT = 640`, no new geometry case)
+- `electron/shared/types.ts`, `electron/shared/ipc-channels.ts` — AI types + `AI_*` channels
+- `electron/main/ipc/security.ts` — AI channel runtime validation
+- `electron/preload/index.ts` — narrow `window.electronAPI.ai` domain API
+- `electron/main/index.ts` — handler registration + quit-time AI shutdown
+- `electron/main/db/migration-policy.ts` — `EXPECTED_MIGRATION_VERSION = 11`
+- `package.json` — `resources/ai` extraResource (outside `app.asar`)
+- `docs/ai/` architecture, state, features, security, testing, issues, decisions, task log
+
+**Tests Run**:
+- `npm run typecheck` — Node + web projects passed
+- `npm run lint` — zero warnings
+- `npm test` — 28 files, 133 tests passed (87 baseline + 46 AI)
+- `npm run build` — main, preload, renderer bundles passed
+
+**Tests Not Run**:
+- Real Gemma smoke test (`LOCAL_AI_OK`, Stop reuse, orphan check) — no llama-server/GGUF on this workstation
+- `npm run test:sync`, `capture:design`, packaged/offline runtime validation — same reason + environment
+
+**Result**: Done (pending real-model + packaged validation)
+**Notes**:
+- Phase 0 baseline at `ac57a4e`: typecheck/lint/87 tests/build all PASS; no prior AI code (grep clean).
+- Discrepancies resolved from source evidence: AI reuses 640px height (no validator change); SHA-256 stays opt-in (no canonical hash); `ssh-agent` Disabled is irrelevant (IdentityFile direct).
+- Privacy: search never calls `electronAPI.ai`; AI persists only visible user/assistant text; no file/Todo content auto-fed.

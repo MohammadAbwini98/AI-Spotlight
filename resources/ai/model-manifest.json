@@ -1,0 +1,23 @@
+{
+  "id": "gemma-4-12b-it-q4-k-m",
+  "name": "Gemma 4 12B",
+  "family": "gemma",
+  "format": "gguf",
+  "quantization": "Q4_K_M",
+  "filename": "gemma-4-12b-it-Q4_K_M.gguf",
+  "sha256": null,
+  "verifySha256": false,
+  "minimumFileBytes": 6000000000,
+  "maximumFileBytes": 12000000000,
+  "minimumRamGb": 24,
+  "recommendedRamGb": 32,
+  "runtime": "llama.cpp",
+  "runtimeMinimumVersion": "b5000",
+  "_notes": [
+    "sha256 is null because the final model artifact is provisioned offline by the user.",
+    "Set sha256 plus verifySha256=true once a canonical artifact hash is published.",
+    "The GGUF is never bundled inside app.asar. It lives in the managed model",
+    "directory (%LOCALAPPDATA%\\SpotlightTodo\\models) so app upgrades do not",
+    "redistribute or delete it."
+  ]
+}

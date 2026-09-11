@@ -1,9 +1,13 @@
 # KNOWN_ISSUES.md — Current Risks and Limitations
 
-> **Last Updated**: 2026-07-22
+> **Last Updated**: 2026-09-11
 
 ## Active
 
+- **Local AI runtime not bundled:** `llama-server.exe` and its DLLs are not in the repository; place the pinned-minimum build under `resources/ai/runtime/` at packaging time (see `resources/ai/README.md`). Until then the AI screen reports `AI_RUNTIME_NOT_FOUND` with setup guidance.
+- **Model provisioned offline:** the Gemma 4 12B Q4_K_M GGUF is not bundled and has no canonical SHA-256 yet (`verifySha256: false`); import it once via AI Chat → Select model file. Hash enforcement activates when a canonical hash ships in the manifest.
+- **Real-model validation pending:** streaming, Stop-reuse, tokens/sec, RAM, cold-start, and quit-cleanliness with the actual 12B model are unexecuted on this workstation.
+- **Model import progress:** large GGUF copies run async without blocking the renderer, but no byte-level progress UI is shown yet (P2).
 - **Native blur variance:** transparent-window blur strength varies by Windows compositor/GPU; tint and Reduced Transparency preserve readability.
 - **Native resize variance:** resizing the transparent BrowserWindow between compact and expanded heights can occasionally create a compositor frame outlier on Windows even when renderer animation frames remain at refresh cadence.
 - **Watcher portability:** recursive `fs.watch` is Windows-validated. Reconciliation is required after downtime/trust loss; other platforms need validation.

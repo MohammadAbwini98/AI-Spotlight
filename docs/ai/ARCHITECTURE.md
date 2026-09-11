@@ -84,3 +84,47 @@ In-place TaskNotesEditor -> sanitize + HTML/plain-text/Markdown projections
 The renderer never receives a general-purpose path-write API and cannot choose a destination without the native user gesture.
 
 `TaskNotesEditor` owns browser selection, contextual menus, slash commands, safe paste, and table editing inside the existing `NoteEditor` panel. `NoteEditor` owns task-bound draft serialization and ordered persistence so an older save cannot overwrite a newer task draft. Rich HTML is sanitized before DOM insertion and before persistence; plain text remains the search/indexing contract.
+
+## Local AI assistant (dedicated chat, lazy runtime)
+
+Spotlight search and the AI assistant are architecturally independent. Search
+resolves through SQLite/FTS5 only; the AI runtime starts solely from explicit
+AI interaction (opening AI Chat) and never during startup, search, Todo,
+Settings, sync, or Recent Files use.
+
+```text
+React AiChatView (src/features/ai/)
+  <-> sandboxed typed contextBridge/preload window.electronAPI.ai
+Electron main process
+  |- authorized/validated AI IPC (electron/main/ipc/ai.ipc.ts)
+  `- AiRuntimeService (electron/main/ai/)
+       |- model-resolver / model-validator (managed %LOCALAPPDATA%/SpotlightTodo/models)
+       |- LlamaProcessManager (sole child_process.spawn owner, shell:false, 127.0.0.1 only)
+       |- LlamaClient (OpenAI-compatible SSE streaming over loopback)
+       `- AiSessionManager (ai_conversations/ai_messages, migration 011)
+            <-> llama-server.exe (extraResource, outside app.asar)
+                 <-> Gemma 4 12B GGUF (managed model dir, survives app upgrades)
+```
+
+| Module | Responsibility |
+|---|---|
+| `src/features/ai/AiChatView.tsx` | Dedicated chat screen orchestration, background ensureReady, 50 ms stream batching |
+| `src/features/ai/AiChatHeader.tsx` | Back nav, model pill, conversation picker, new chat |
+| `src/features/ai/AiConversation.tsx` | Transcript with stick-to-bottom autoscroll and polite completion announcements |
+| `src/features/ai/AiMessage.tsx` | User/assistant bubbles, copy feedback, streaming caret |
+| `src/features/ai/AiComposer.tsx` | Multiline input (Enter send, Shift+Enter newline, Escape stop) |
+| `src/features/ai/AiRuntimeStatus.tsx` | Understandable runtime states, never a bare spinner |
+| `src/features/ai/ai-markdown.ts` | Escape-first safe Markdown projection (no new dependency) |
+| `electron/main/ai/ai-runtime.service.ts` | Lifecycle (ensureReady/generate/cancel/shutdown), single-generation policy |
+| `electron/main/ai/ai-config.ts` | Centralized context/threads/sampling/timeout policy |
+| `electron/main/ai/ai-errors.ts` | Structured error taxonomy plus UI messages |
+| `electron/main/ai/ai-provider.ts` | AiProvider seam and MockAiProvider for tests |
+| `electron/main/ipc/ai.ipc.ts` | Trusted handlers, 40 ms main-side delta batching, native GGUF import |
+| `electron/shared/` AI types/channels | `AiRole/Message/ChatRequest/RuntimeStatus/TokenDelta/Completion/Conversation/ModelInfo`, `AI_*` channels |
+
+Streaming flows `llama-server -> LlamaClient -> AiRuntimeService -> main IPC
+(AI_CHAT_DELTA/COMPLETE/ERROR) -> preload -> React`. Stop cancels the
+AbortController stream without unloading the model. Quit cancels generation,
+closes the stream, and terminates llama-server with a bounded wait so no
+orphan process remains. Only visible user/assistant text persists; reasoning,
+KV cache, and diagnostics never do.

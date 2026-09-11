@@ -58,7 +58,24 @@ export const IPC = {
   // ─── App ─────────────────────────────────────────────────────────────────
   APP_HIDE_WINDOW: 'app:hideWindow',
   APP_QUIT: 'app:quit',
-  APP_SET_HEIGHT: 'app:setHeight'
+  APP_SET_HEIGHT: 'app:setHeight',
+
+  // ─── AI Assistant (local runtime) ─────────────────────────────────────────
+  // Search/file IPC never starts the AI runtime; only these channels do.
+  AI_GET_STATUS: 'ai:getStatus',
+  AI_ENSURE_READY: 'ai:ensureReady',
+  AI_CHAT_START: 'ai:chatStart',
+  AI_CHAT_CANCEL: 'ai:chatCancel',
+  AI_CHAT_DELTA: 'ai:chatDelta', // main → renderer (push)
+  AI_CHAT_COMPLETE: 'ai:chatComplete', // main → renderer (push)
+  AI_CHAT_ERROR: 'ai:chatError', // main → renderer (push)
+  AI_NEW_CONVERSATION: 'ai:newConversation',
+  AI_GET_CONVERSATIONS: 'ai:getConversations',
+  AI_GET_MESSAGES: 'ai:getMessages',
+  AI_DELETE_CONVERSATION: 'ai:deleteConversation',
+  AI_GET_MODEL_INFO: 'ai:getModelInfo',
+  AI_SELECT_MODEL: 'ai:selectModel',
+  AI_SHUTDOWN: 'ai:shutdown'
 } as const
 
 export type IpcChannel = (typeof IPC)[keyof typeof IPC]

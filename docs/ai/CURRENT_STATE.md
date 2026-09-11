@@ -1,10 +1,12 @@
 # CURRENT_STATE.md — Live Project Status
 
-> **Last Updated**: 2026-09-10
+> **Last Updated**: 2026-09-11
 
 ## Current status
 
 DeepDive (repository: Spotlight-Todo) is a working Electron 43/React desktop application with SQLite/FTS5 file search, Todo lists/tasks/notes, settings, hardened portable/local data-path handling, system tray/global shortcuts, and the Liquid Glass overlay UI. Source is version-controlled on `main` and pushed to `git@github.com:MohammadAbwini98/AI-Spotlight.git` (initial commit `56fa4a4`, verified `origin/main` in sync).
+
+A dedicated local AI chat (`search | ai | todo | settings`) is implemented against a lazy llama.cpp runtime configured for Gemma 4 12B Q4_K_M. The runtime executable and GGUF are provisioned offline and are not bundled: the AI screen, IPC, validation, persistence (migration 011), settings section, and 46 new regression tests pass, but no real-model smoke test has run on this workstation.
 
 ## Confirmed working
 
@@ -59,6 +61,10 @@ DeepDive (repository: Spotlight-Todo) is a working Electron 43/React desktop app
 - Task notes are now rich-text capable inside the existing Task page panel. Contextual selection/block/slash menus provide headings, inline styles, adaptive colors/highlights, nested lists, links, and editable tables without adding a route, window, dialog, or permanent word-processor toolbar.
 - Rich notes persist sanitized HTML in the existing note record, preserve a Markdown export projection, and mirror readable plain text into the existing FTS-backed `tasks.notes` field. Serialized saves and an imperative flush prevent stale debounces from crossing task boundaries.
 - Rich table clipboard handling emits `text/html` plus tab-separated `text/plain`, accepts safe HTML tables and TSV pastes, and keeps table actions contextual to the active cell.
+- Dedicated AI Chat view (`ai` route) with background startup, streaming responses, Stop, retry, new/persisted conversations, copy, safe Markdown, multiline composer, and model-missing import UX; search never starts the runtime.
+- Loopback-only lazy llama.cpp lifecycle (ensureReady/generate/cancel/shutdown) with single-generation CPU policy, bounded health polling, crash-to-error recovery, and quit-time termination.
+- Main-process GGUF resolution/validation (explicit path, managed `%LOCALAPPDATA%\SpotlightTodo\models`, manifest match, optional SHA-256) and native trusted model import.
+- Settings AI section reports model, runtime status, and model path with a trusted Select control.
 
 ## Synchronization performance (100,000 real files)
 
