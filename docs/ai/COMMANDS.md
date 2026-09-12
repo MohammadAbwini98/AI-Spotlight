@@ -24,7 +24,8 @@ Node.js 22.12 or newer is required by Electron 43, Vite, Vitest, electron-builde
 | `npm run release:local -- --force` | Replace an existing private-use version directory and rebuild it with the same local signing identity |
 | `npm run package` | Alias for `npm run release` |
 | `npm run package:win` | Alias for `npm run release` |
-| `npm run verify:release:security` | Reject unsigned/unexpected signers, incomplete migrations, and create the release SHA-256 inventory |
+| `npm run verify:release:security` | Reject unsigned/unexpected signers, incomplete migrations, unresolved packaged native dependencies, and create the release SHA-256 inventory |
+| `node scripts/verify-native-dependencies.cjs resources/ai/runtime` | PE import scan of the AI runtime dir: every non-Windows dependency must be bundled or declared in `resources/ai/vc-runtime.json` (also runs inside `release*` and `verify:release:security`) |
 | `SPOTLIGHT_TODO_REAL_MODEL=1 SPOTLIGHT_TODO_QUAL_DATA=<dir> npx vitest run tests/ai-qualification.spec.ts` | Real-model qualification (15 tests, env-gated, excluded from default `npm test`); requires provisioned `resources/ai/runtime/llama-server.exe` plus a staged Q4_K_M GGUF |
 
 Benchmark/runtime fixtures are deterministic OS-temporary files and are removed after completion. JSON evidence is written under `artifacts/`. Migrations run automatically from `electron/main/db/migrations/`.

@@ -157,6 +157,15 @@ describe('Windows release packaging', () => {
     expect(() => assertPublicSigningAvailable('local', {}, false)).not.toThrow()
   })
 
+  it('validates native runtime dependencies before and after packaging', () => {
+    const releaseScript = readFileSync('scripts/package-release.cjs', 'utf8')
+    const verificationScript = readFileSync('scripts/verify-release-security.ps1', 'utf8')
+
+    expect(releaseScript).toContain('verify-native-dependencies.cjs')
+    expect(verificationScript).toContain('verify-native-dependencies.cjs')
+    expect(verificationScript).toContain('win-unpacked\\resources\\ai\\runtime')
+  })
+
   it('creates a non-exportable current-user certificate and explicit trust instructions', () => {
     const preparationScript = readFileSync('scripts/prepare-local-signing.ps1', 'utf8')
 

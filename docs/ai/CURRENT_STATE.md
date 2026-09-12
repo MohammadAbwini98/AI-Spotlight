@@ -12,8 +12,9 @@ A dedicated local AI chat (`search | ai | todo | settings`) is implemented again
 
 - Production main, preload, worker, and renderer bundles build with `npm run build`.
 - Node and renderer TypeScript projects pass through `npm run typecheck`.
-- Vitest regression suite passes with 147 tests across 30 files (+1 env-gated real-model file).
-- Generation-phase UX (`preparing`/`thinking`/`responding` on `AiRuntimeStatus`, Thinking/Responding pill, 1.5 s poll while generating) is implemented in source with 5 new tests and live UI verification; it is not yet in the signed 1.0.1 distributable.
+- Vitest regression suite passes with 157 tests across 32 files (+1 env-gated real-model file).
+- Generation-phase UX (`preparing`/`thinking`/`responding` on `AiRuntimeStatus`, Thinking/Responding pill, 1.5 s poll while generating) is implemented in source with 5 new tests and live UI verification; it ships in the 1.0.2 package (verified present in `app.asar`).
+- The llama.cpp runtime's VC++ dependency is closed in source: full import-graph audit (50 binaries, exact 3-DLL external set), app-local `vcruntime140.dll`/`vcruntime140_1.dll`/`msvcp140.dll` (v14.51.36247.0) from the sanctioned VS `VC.Redist` payload, provenance pinned in `resources/ai/vc-runtime.json`, release-blocking `verify-native-dependencies.cjs` gate (10 new tests), and live loaded-module evidence of app-local resolution; ships with the next package.
 - Real SQLite worker integration passes initial, unchanged, changed, deleted, restored, warning, cancelled, and failed lifecycles.
 - Synchronization traversal and index writes run in `sync-worker.js`, not Electron's main thread.
 - Canonical states and exact per-run counters persist in `scan_sessions` and `sync_status`.
@@ -32,7 +33,7 @@ A dedicated local AI chat (`search | ai | todo | settings`) is implemented again
 - A separate private-use workflow creates or reuses a non-exportable Current User `DeepDive Local Use` signing key, locally trusts its public certificate, signs both distributables, and exports only `DeepDive-Local.cer` plus installation instructions under `release/local/DeepDive/<version>/`. The complete DeepDive 1.0.0 local release passed signature, migration, icon, product-metadata, and SHA-256 verification.
 - Windows packaging now has a transparent 32-bit product icon with dedicated 16, 24, 32, 48, 64, 128, and 256 px frames; the runtime tray uses the matching 256 px PNG instead of its embedded fallback.
 - `resources/icon.svg` is the canonical DeepDive artwork; Windows packaging uses its generated multi-resolution ICO and the BrowserWindow/tray use its generated PNG while preserving the existing app ID and data locations for upgrade compatibility.
-- DeepDive 1.0.1 is the signed private patch release containing the persistent-on-focus-loss search-window behavior; its Portable and Setup artifacts passed signature, migration, packaged-code, and SHA-256 verification.
+- DeepDive 1.0.2 is the signed private release containing the Thinking/Responding UX and the app-local VC++ runtime; its Portable and Setup artifacts passed typecheck, lint, 157 tests, build, native-dependency validation (53 binaries), signature, migration, packaged-native-dependency, and SHA-256 (255 files) verification, plus a packaged-server real-model smoke (health ok, HTTP 200 inference, app-local module paths, zero orphans). Clean-machine, physical-offline, and post-reboot cold-start runs remain user steps.
 - Settings displays the active database directory.
 - The production Electron bundle completed a 100,000-file walkthrough while search, Todo, navigation, window movement, and rendering remained responsive.
 - Compact Spotlight chrome remains transparent and uses distinct reference-matched light and dark glass materials for the search capsule, buttons, text, and icons.
@@ -69,7 +70,7 @@ A dedicated local AI chat (`search | ai | todo | settings`) is implemented again
 - Real-model qualification (i7-4980HQ/8 threads/32 GB RAM, llama-server b10909, `gemma-4-12B-it-Q4_K_M.gguf` 7.38 GB): cold start 11-51 s, first visible token ~27 s (extensive reasoning preamble), steady decode ~2.6 tok/s (llama-bench tg64), model-loaded RSS ~14.8 GB, cancel ~16 ms, shutdown ~1 s with zero orphan processes.
 - Packaged signed Portable/Setup produced via `release:local`; unpacked payload verified end-to-end over CDP (search isolation, chat open, streamed assistant reply persisted to SQLite, graceful exit 0, no orphan server).
 - Release-closure evidence (`artifacts/release-closure-2026-09-12.json`): portable wrapper healthy in 8/8 local conditions (code-2 not reproduced; NSIS stub provably passes the inner exit code through); 27/27 DNS-blackholed offline suite with loopback-only proof; search latency un-degraded under inference (median ~1.5 ms vs 2.6 ms baseline); thread matrix 4/5/6 keeps default 6; first-visible-token anatomy measured (constrained ~30 s, open-ended 170–380 s of hidden reasoning); app-level warm cold starts 6.9–11.2 s.
-- The distributable does NOT bundle the VC++ runtime (`vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll`) that its llama-server requires; clean Windows machines without the VC++ 2015–2022 Redist cannot start the AI runtime (P1). Clean-machine and physical-unplug runs remain user steps (no sandbox/elevation in the agent session).
+- The distributable previously did NOT bundle the VC++ runtime (`vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll`) that its llama-server requires; the 1.0.1 payload still lacks it (the new gate fails it with 96 unresolved entries). Closure shipped in 1.0.2 (app-local bundle + provenance + gate, packaged-server smoke PASS); clean-machine and physical-unplug runs remain user steps (no sandbox/elevation in the agent session).
 
 ## Synchronization performance (100,000 real files)
 

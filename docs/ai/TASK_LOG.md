@@ -1477,3 +1477,41 @@
 - Reasoning UX is in source + tests only; the signed 1.0.1 distributable predates it (ships next package + re-verification).
 - Working tree left uncommitted (5 modified + 2 new files); perf/offline driver scripts live outside the repo under Temp (`opencode/perf/`).
 - Env during campaign: 32 GB RAM (~24 free), i7-4980HQ, 200% display, model `D:\AiQual\models`, app profile isolated for offline run.
+
+---
+
+### 2026-09-12 — Muse Spark (OpenCode) — AI Spotlight Final Distribution Closure (VC++ Self-Containment + 1.0.2)
+
+**Agent**: Muse Spark (OpenCode)
+**Task**: Distribution closure after the `183c3e4` qualification: preserve/commit the qualified Thinking/Responding UX separately; resolve the VC++ runtime P1 via a full PE import-graph audit; decide installed/portable strategy; add an automated native-dependency gate; produce a fresh verified 1.0.2 artifact. No AI redesign.
+
+**Files Created**:
+- `resources/ai/vc-runtime.json` — pinned VC++ provenance (sanctioned `VC.Redist` source, v14.51.36247.0 version/bytes/SHA-256, app-local strategy, Windows-native set)
+- `scripts/verify-native-dependencies.cjs` — dependency-free PE import scanner + release gate (`binary -> dependency -> strategy` diagnostics; exit 0/1/2)
+- `tests/native-dependencies.spec.ts` — 9 hermetic tests (synthetic PE32/PE32+ import + delay-load parsing, classification, missing/hash/arch failures, manifest consistency)
+
+**Files Modified**:
+- `resources/ai/runtime/` (provisioned, gitignored): +`vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll` copied from `VC\Redist\MSVC\14.51.36231\x64\Microsoft.VC145.CRT` (bit-identical to System32, Microsoft-signed)
+- `scripts/package-release.cjs` — native-dependency validation between build and packaging
+- `scripts/verify-release-security.ps1` — packaged-payload native-dependency check
+- `tests/release-packaging.spec.ts` — wiring guard (+1 test)
+- `resources/ai/README.md` — dependency table, sanctioned-source provisioning rules, servicing notes
+- `package.json` / `package-lock.json` — 1.0.1 → 1.0.2
+- `docs/ai/` current-state, known-issues, features, testing, commands, decisions, task log
+
+**Tests Run**:
+- Phase-0 commit `05fe24d` (qualified UX only): typecheck PASS, lint PASS (0 warnings), 147 passed + 15 skipped, build PASS
+- Full PE audit: union of static imports over all 50 runtime binaries = exactly the 3 VC++ DLLs + bundled + 12 api-ms-win-crt forwarders + 6 core OS DLLs; zero delay-load imports
+- Pre-fix loader evidence: packaged-server modules showed all 3 VC++ DLLs from `C:\WINDOWS\SYSTEM32`
+- Post-fix loader evidence (source + packaged 1.0.2 server, real Gemma 7.38 GB): all 3 resolve app-locally; health ok; HTTP 200 chat completion via bundled DLLs; zero orphans after stop
+- Gate: PASS on source runtime (53 binaries); correctly FAILS the old 1.0.1 payload (96 unresolved entries, exit 1)
+- Final: typecheck PASS, lint PASS (0 warnings), **157 passed** + 15 skipped (31 files), build PASS
+- Fresh `npm run release:local` 1.0.2: all gates + packaging + signatures Valid (incl. Microsoft-signed VC++ DLLs) + migrations + packaged native-deps + SHA-256 (255 files) PASS; `app.asar` contains Thinking/Responding UX
+
+**Tests Not Run**: clean-machine install/portable run (no Sandbox/Hyper-V/elevation in-session); physical-unplug offline rerun (prior DNS-blackholed 27/27 stands; unplug is the gold-standard user step); post-reboot cold start (cannot reboot this machine); env-gated 15-test qual file (unchanged — prior 15/15 stands)
+
+**Result**: Done — DEPENDENCIES SELF-CONTAINED IN SOURCE + FRESH 1.0.2 PACKAGE PASS + ZERO ORPHANS + FULL REGRESSION PASS; clean-machine/physical-offline/cold-start are user handoffs (commands below)
+**Notes**:
+- Clean-machine handoff: on a machine without VC++ Redist, run `DeepDive-1.0.2-setup.exe` (per-user, no elevation) or `DeepDive-1.0.2-portable.exe`, then AI Chat → model import → generate; expected: no prerequisite prompt, `llama-server` modules resolve beside the exe.
+- Physical-offline handoff: disable all adapters, then launch → search → AI open → Gemma load → generate → stream → cancel → second request → persistence → restart → shutdown.
+- Post-reboot handoff: after reboot measure app launch, llama start, model-ready, prompt eval, hidden-reasoning duration, first visible token; report cold vs warm vs loaded table.

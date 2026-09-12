@@ -66,14 +66,14 @@
 - `%LOCALAPPDATA%\SpotlightTodo` default, with `PORTABLE_EXECUTABLE_DIR\SpotlightData` only for persistent portable locations outside known OneDrive roots.
 - Staged SQLite-family migration from legacy executable/roaming storage; cloud-adjacent sources are removed after verified publication.
 - Electron sandbox, blocked navigation/windows/downloads/permissions, dangerous-file launch denial, and hardened Electron fuses.
-- A guarded, versioned electron-builder release workflow for signed Windows Portable and per-user Setup executables; unsigned builds fail, both distributables are required and signature-checked, packaged migrations are checked, and release files receive a SHA-256 inventory.
+- A guarded, versioned electron-builder release workflow for signed Windows Portable and per-user Setup executables; unsigned builds fail, both distributables are required and signature-checked, packaged migrations are checked, native AI-runtime dependencies are import-scanned against the pinned `vc-runtime.json` provenance (pre-packaging and against the packaged payload), and release files receive a SHA-256 inventory.
 - DeepDive-branded executable, Portable, Setup, installer shortcuts, tray text, and certificate artifacts, with `resources/icon.svg` retained as the canonical artwork and generated ICO/PNG formats used at Windows package/runtime boundaries.
 - A separate private multi-machine release mode with a non-exportable `DeepDive Local Use` build-machine key, Current User trust, signed local-use executables, and a public-only `.cer` plus explicit trust instructions for other personally controlled Windows accounts.
 - Packaged window recovery registers independently of tray setup; a built-in tray-image fallback and second-instance reveal keep the taskbar-hidden overlay reachable.
 
 ## Not fully verified
 
-- Public-certificate and clean-machine Portable/Setup runtime (plus VC++ redist bundling decision — P1).
+- Public-certificate and clean-machine Portable/Setup runtime (VC++ redist decision CLOSED in source: app-local bundle + gate; clean-machine execution still pending).
 - Portable wrapper code-2 on this workstation — not reproduced in 8/8 local conditions; classified environment-specific pending clean-machine confirmation.
 - Full SQLite encryption at rest and key recovery.
 - One-million-file execution on this workstation.

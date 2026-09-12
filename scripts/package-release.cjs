@@ -165,7 +165,7 @@ function printPlan(plan, force) {
         ? [`Public local-use certificate: ${plan.localCertificateArtifact}`]
         : []),
       replacement,
-      'Checks: typecheck, lint, tests, production build, Authenticode signatures, migrations, SHA-256 inventory'
+      'Checks: typecheck, lint, tests, production build, native dependencies, Authenticode signatures, migrations, SHA-256 inventory'
     ].join('\n') + '\n'
   )
 }
@@ -227,6 +227,11 @@ function runRelease(argumentsList = process.argv.slice(2)) {
   run(process.execPath, [npmCli, 'run', 'lint'], 'Linting')
   run(process.execPath, [npmCli, 'test'], 'Automated tests')
   run(process.execPath, [npmCli, 'run', 'build'], 'Production build')
+  run(
+    process.execPath,
+    [join(REPOSITORY_ROOT, 'scripts', 'verify-native-dependencies.cjs'), join(REPOSITORY_ROOT, 'resources', 'ai', 'runtime')],
+    'Native dependency validation'
+  )
 
   let signingEnvironment = process.env
   if (options.local) {

@@ -4,7 +4,8 @@
 
 ## Automated suites
 
-- `npm test`: 147 tests across 30 files (+1 env-gated real-model file): all previous coverage plus AI generation-phase transitions (preparing/thinking/responding, failure/cancel clearing, hermetic manifest + injected fakes) and Thinking/Responding pill markup with aria-live and Stop affordance.
+- `npm test`: 157 tests across 32 files (+1 env-gated real-model file): all previous coverage plus native-dependency validation (synthetic PE32/PE32+ import + delay-load parsing, bundled/native/declared classification, missing-file/hash/arch failures, committed-manifest consistency, release-pipeline wiring) alongside the AI generation-phase transitions (preparing/thinking/responding, failure/cancel clearing, hermetic manifest + injected fakes) and Thinking/Responding pill markup with aria-live and Stop affordance.
+- `node scripts/verify-native-dependencies.cjs resources/ai/runtime`: release-time PE import scan of the AI runtime directory; fails with `binary -> dependency -> strategy` lines when a non-Windows dependency is neither bundled nor declared in `resources/ai/vc-runtime.json`. Also runs pre-packaging inside `npm run release*` and against the packaged payload inside `verify:release:security`.
 - `SPOTLIGHT_TODO_REAL_MODEL=1 SPOTLIGHT_TODO_QUAL_DATA=<dir> npx vitest run tests/ai-qualification.spec.ts`: 15/15 real-model tests against the production `AiRuntimeService` (short/multi-turn/long/Unicode/Markdown/streaming/cancel/reuse/busy/restart-reload/cascade/malformed-IPC/runtime-unavailable/model-unavailable/crash-recovery). Requires provisioned `resources/ai/runtime/llama-server.exe` and a staged Q4_K_M GGUF; excluded from the default gate by design.
 - `npm run test:sync`: Electron-ABI real-file/worker/SQLite/WAL/FTS integration.
 - `npm run typecheck`: Node and web TypeScript projects.
@@ -66,7 +67,7 @@ Hardware: Windows 10 10.0.19045, i7-4980HQ (8 logical), 32 GB RAM (22.6 free), 6
 
 ## Remaining environment tests
 
-- Public-certificate clean-machine runs (no Sandbox/Hyper-V/elevation in the agent session; enablement needs elevation). The distributable's runtime dir provably lacks `vcruntime140.dll`/`vcruntime140_1.dll`/`msvcp140.dll` (resolved from this dev machine's System32) — bundle or prerequisite decision required first.
+- Public-certificate clean-machine runs (no Sandbox/Hyper-V/elevation in the agent session; enablement needs elevation). Source closure is done: the runtime dir now bundles the sanctioned app-local VC++ DLLs and the gate passes on it (53 binaries) while failing the old 1.0.1 payload (96 unresolved entries); loaded-module evidence proves app-local resolution. A fresh package + clean-machine confirmation remain.
 - Physical-unplug offline rerun (isolation-level suite passed 27/27; one-command handoff pending).
 - One-million-file execution.
 - ACL-denied, offline OneDrive, network, HDD/external, storage-full, and read-only media.

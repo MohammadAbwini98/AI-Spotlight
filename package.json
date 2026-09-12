@@ -1,6 +1,6 @@
 {
   "name": "spotlight-todo",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "DeepDive file search and Todo desktop app with Apple Liquid Glass UI",
   "main": "out/main/index.js",
   "engines": {

@@ -44,6 +44,10 @@ if (($sourceMigrations -join "`n") -ne ($packagedMigrations -join "`n")) {
   throw 'Packaged migration inventory does not match source migrations.'
 }
 
+$packagedRuntimeDirectory = Join-Path $releaseRoot 'win-unpacked\resources\ai\runtime'
+& node (Join-Path $PSScriptRoot 'verify-native-dependencies.cjs') $packagedRuntimeDirectory
+if ($LASTEXITCODE -ne 0) { throw 'Packaged AI runtime has unresolved native dependencies.' }
+
 $integrityScript = Join-Path $PSScriptRoot 'release-integrity.cjs'
 if ($VerifyExistingManifest) {
   & node $integrityScript --verify $releaseRoot
@@ -52,4 +56,4 @@ if ($VerifyExistingManifest) {
 }
 if ($LASTEXITCODE -ne 0) { throw 'Release integrity verification failed.' }
 
-Write-Output 'Release signatures, migrations, and SHA-256 inventory are valid.'
+Write-Output 'Release signatures, migrations, native dependencies, and SHA-256 inventory are valid.'

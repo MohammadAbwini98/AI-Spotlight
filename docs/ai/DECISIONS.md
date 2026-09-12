@@ -266,3 +266,15 @@
 **Alternatives Considered**: Push-based phase events (rejected: new channel for what polling covers); fake progress percentage (rejected by task constraints); changing Starting/Loading texts (rejected: minimal diff, existing tests).
 
 **Related Files**: `electron/shared/types.ts`, `electron/main/ai/ai-runtime.service.ts`, `src/features/ai/AiRuntimeStatus.tsx`, `src/features/ai/AiChatView.tsx`, `tests/ai-generation-phase.spec.ts`, `tests/ai-chat-view.spec.tsx`
+
+### 2026-09-12 — App-Local VC++ Runtime for Portable and Installed Distributions
+
+**Decision**: Ship the three required Visual C++ DLLs (`vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll`, qualified v14.51.36247.0) app-locally next to `llama-server.exe` in `resources/ai/runtime/` for BOTH the Portable and the per-user Setup distributions. Provenance is pinned in `resources/ai/vc-runtime.json`; `scripts/verify-native-dependencies.cjs` (dependency-free PE import scanner) blocks the release pre-packaging and against the packaged payload when any shipped binary has an unbundled, undeclared non-Windows dependency.
+
+**Reason**: Full PE import-graph audit over all 50 runtime binaries proved the external set is exactly those three DLLs (no delay-load, no other VC++ siblings; UCRT resolves inbox on Windows 10+). The sanctioned source is the VS BuildTools `VC.Redist` payload (bit-identical to System32, licensed Distributable Code) — never System32. A machine-wide `vc_redist.x64.exe` prerequisite was rejected for the per-user non-elevated NSIS installer (the redist requires elevation; would break silent offline install), and a static `/MT` llama.cpp rebuild was rejected (forks from official upstream b10909 binaries, custom toolchain, per-release re-qualification for zero measured benefit). App-local adds ~872 KB, needs no elevation, keeps the offline distribution set installable, and never downgrades the machine runtime (loader resolution is directory-scoped to the llama-server process). Clean-machine confirmation remains a user step.
+
+**Impact**: `resources/ai/runtime/` gains the 3 DLLs (still gitignored/provisioned); release pipeline refuses VC++ regressions with `binary → dependency → strategy` diagnostics; packaged SHA-256 inventory covers the new files.
+
+**Alternatives Considered**: Prerequisite redist installer (rejected: elevation vs per-user installer); static runtime (rejected: fragile custom fork); System32 copies (rejected: not a redistribution source).
+
+**Related Files**: `resources/ai/vc-runtime.json`, `resources/ai/README.md`, `scripts/verify-native-dependencies.cjs`, `scripts/package-release.cjs`, `scripts/verify-release-security.ps1`, `tests/native-dependencies.spec.ts`
