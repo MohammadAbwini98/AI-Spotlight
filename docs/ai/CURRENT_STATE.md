@@ -1,10 +1,10 @@
 # CURRENT_STATE.md — Live Project Status
 
-> **Last Updated**: 2026-09-12
+> **Last Updated**: 2026-09-12 (release-closure phase)
 
 ## Current status
 
-DeepDive (repository: Spotlight-Todo) is a working Electron 43/React desktop application with SQLite/FTS5 file search, Todo lists/tasks/notes, settings, hardened portable/local data-path handling, system tray/global shortcuts, and the Liquid Glass overlay UI. Source is version-controlled on `main` and pushed to `git@github.com:MohammadAbwini98/AI-Spotlight.git`.
+DeepDive (repository: Spotlight-Todo) is a working Electron 43/React desktop application with SQLite/FTS5 file search, Todo lists/tasks/notes, settings, hardened portable/local data-path handling, system tray/global shortcuts, and the Liquid Glass overlay UI. Source is version-controlled on `main` and pushed to `git@github.com:MohammadAbwini98/AI-Spotlight.git` (HEAD `183c3e4`, clean, in sync at phase start; gates re-verified PASS at start and after the phase change).
 
 A dedicated local AI chat (`search | ai | todo | settings`) is implemented against a lazy llama.cpp runtime configured for Gemma 4 12B Q4_K_M — and it is now REAL-MODEL + PACKAGED verified on this workstation: official llama-server b10909, 7.38 GB Q4_K_M GGUF, 15/15 real-model qualification tests, 12/12 packaged CDP-driven E2E gates, release signatures/migrations/SHA-256 valid. Runtime binaries and the GGUF are provisioned locally and gitignored, never committed.
 
@@ -12,7 +12,8 @@ A dedicated local AI chat (`search | ai | todo | settings`) is implemented again
 
 - Production main, preload, worker, and renderer bundles build with `npm run build`.
 - Node and renderer TypeScript projects pass through `npm run typecheck`.
-- Vitest regression suite passes with 87 tests across 20 files.
+- Vitest regression suite passes with 147 tests across 30 files (+1 env-gated real-model file).
+- Generation-phase UX (`preparing`/`thinking`/`responding` on `AiRuntimeStatus`, Thinking/Responding pill, 1.5 s poll while generating) is implemented in source with 5 new tests and live UI verification; it is not yet in the signed 1.0.1 distributable.
 - Real SQLite worker integration passes initial, unchanged, changed, deleted, restored, warning, cancelled, and failed lifecycles.
 - Synchronization traversal and index writes run in `sync-worker.js`, not Electron's main thread.
 - Canonical states and exact per-run counters persist in `scan_sessions` and `sync_status`.
@@ -67,6 +68,8 @@ A dedicated local AI chat (`search | ai | todo | settings`) is implemented again
 - Settings AI section reports model, runtime status, and model path with a trusted Select control.
 - Real-model qualification (i7-4980HQ/8 threads/32 GB RAM, llama-server b10909, `gemma-4-12B-it-Q4_K_M.gguf` 7.38 GB): cold start 11-51 s, first visible token ~27 s (extensive reasoning preamble), steady decode ~2.6 tok/s (llama-bench tg64), model-loaded RSS ~14.8 GB, cancel ~16 ms, shutdown ~1 s with zero orphan processes.
 - Packaged signed Portable/Setup produced via `release:local`; unpacked payload verified end-to-end over CDP (search isolation, chat open, streamed assistant reply persisted to SQLite, graceful exit 0, no orphan server).
+- Release-closure evidence (`artifacts/release-closure-2026-09-12.json`): portable wrapper healthy in 8/8 local conditions (code-2 not reproduced; NSIS stub provably passes the inner exit code through); 27/27 DNS-blackholed offline suite with loopback-only proof; search latency un-degraded under inference (median ~1.5 ms vs 2.6 ms baseline); thread matrix 4/5/6 keeps default 6; first-visible-token anatomy measured (constrained ~30 s, open-ended 170–380 s of hidden reasoning); app-level warm cold starts 6.9–11.2 s.
+- The distributable does NOT bundle the VC++ runtime (`vcruntime140.dll`, `vcruntime140_1.dll`, `msvcp140.dll`) that its llama-server requires; clean Windows machines without the VC++ 2015–2022 Redist cannot start the AI runtime (P1). Clean-machine and physical-unplug runs remain user steps (no sandbox/elevation in the agent session).
 
 ## Synchronization performance (100,000 real files)
 

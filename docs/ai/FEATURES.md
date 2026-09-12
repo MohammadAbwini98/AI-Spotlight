@@ -52,6 +52,7 @@
 - Dedicated AI action button (sparkles glyph) first in the compact Spotlight actions; opens a full AI Chat screen without changing search input behavior.
 - App navigation is `search | ai | todo | settings`; AI reuses the 640px workspace height so no new native geometry case exists.
 - Streaming local responses with Stop/restart, retry, new chat, conversation picker, persisted history (migration 011), assistant copy, code blocks, safe Markdown, multiline composer, stick-to-bottom autoscroll, empty/error/setup states, and keyboard map (Enter send, Shift+Enter newline, Escape stop/back).
+- Generation-phase status: Thinking/Responding pill states (additive `AiRuntimeStatus.phase`, 1.5 s refresh while generating, aria-live announcement, Stop preserved) report long hidden-reasoning generations without showing, persisting, or streaming reasoning content and without fake progress.
 - Lazy llama.cpp runtime: starts only from AI Chat, stays loaded between prompts, survives window hiding, terminates on quit; single concurrent generation; bounded CPU threads with renderer/indexing reserve.
 - Gemma 4 12B Q4_K_M manifest (`resources/ai/model-manifest.json`, no fabricated checksum); model resolved from explicit override or managed `%LOCALAPPDATA%\SpotlightTodo\models`, validated before launch, importable offline through a native dialog.
 - Settings AI section: model, runtime status, model path, trusted model selection.
@@ -72,8 +73,8 @@
 
 ## Not fully verified
 
-- Public-certificate and clean-machine Portable/Setup runtime.
-- Portable wrapper startup on this workstation (exits code 2; identical unpacked payload verified healthy) — clean-machine follow-up.
+- Public-certificate and clean-machine Portable/Setup runtime (plus VC++ redist bundling decision — P1).
+- Portable wrapper code-2 on this workstation — not reproduced in 8/8 local conditions; classified environment-specific pending clean-machine confirmation.
 - Full SQLite encryption at rest and key recovery.
 - One-million-file execution on this workstation.
 - OneDrive/network/ACL/storage-full hardware and environment scenarios.

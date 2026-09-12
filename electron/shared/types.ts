@@ -225,6 +225,14 @@ export interface AiChatRequest {
 
 export type AiRuntimeState = 'stopped' | 'starting' | 'loading' | 'ready' | 'generating' | 'error'
 
+/**
+ * Fine-grained generation phase for long hidden-reasoning models.
+ * The model can spend minutes generating reasoning before the first visible
+ * answer token; the phase lets the UI report Thinking vs Responding without
+ * ever exposing, persisting, or streaming reasoning content.
+ */
+export type AiGenerationPhase = 'preparing' | 'thinking' | 'responding'
+
 export type AiErrorCode =
   | 'AI_RUNTIME_NOT_FOUND'
   | 'AI_RUNTIME_START_FAILED'
@@ -246,6 +254,8 @@ export interface AiRuntimeStatus {
   state: AiRuntimeState
   /** Model id from the model manifest (for example "gemma-4-12b-it-q4-k-m"). */
   modelId?: string
+  /** Generation sub-state. Present only while starting/loading/generating. */
+  phase?: AiGenerationPhase
   /** Loopback base URL of the managed llama-server instance. Never exposed with a path. */
   errorCode?: AiErrorCode
   error?: string

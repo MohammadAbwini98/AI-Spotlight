@@ -4,7 +4,7 @@
 
 ## Automated suites
 
-- `npm test`: 142 tests across 29 files (+1 env-gated real-model file): all previous coverage plus AI runtime configuration, model manifest/resolution/validation, llama.cpp loopback/spawn/health/SSE/error-taxonomy policy, AI IPC validation and narrow preload surface, AI conversation persistence and migration 011 schema, native import (progress/cancel/partial-cleanup/idempotent re-import), provider abstraction and search/AI separation audits, safe Markdown projection, and AI chat-view rendering states.
+- `npm test`: 147 tests across 30 files (+1 env-gated real-model file): all previous coverage plus AI generation-phase transitions (preparing/thinking/responding, failure/cancel clearing, hermetic manifest + injected fakes) and Thinking/Responding pill markup with aria-live and Stop affordance.
 - `SPOTLIGHT_TODO_REAL_MODEL=1 SPOTLIGHT_TODO_QUAL_DATA=<dir> npx vitest run tests/ai-qualification.spec.ts`: 15/15 real-model tests against the production `AiRuntimeService` (short/multi-turn/long/Unicode/Markdown/streaming/cancel/reuse/busy/restart-reload/cascade/malformed-IPC/runtime-unavailable/model-unavailable/crash-recovery). Requires provisioned `resources/ai/runtime/llama-server.exe` and a staged Q4_K_M GGUF; excluded from the default gate by design.
 - `npm run test:sync`: Electron-ABI real-file/worker/SQLite/WAL/FTS integration.
 - `npm run typecheck`: Node and web TypeScript projects.
@@ -56,10 +56,18 @@ Hardware: Windows 10 10.0.19045, i7-4980HQ (8 logical), 32 GB RAM (22.6 free), 6
 - Cold start: 11-51 s (disk cache dependent). First visible token: ~25-29 s — Gemma 4 emits an extensive `reasoning_content` preamble that the client deliberately ignores (never shown, never persisted); steady visible decode follows at hardware rate.
 - Model-loaded RSS: ~14.8 GB. Cancel latency: ~16 ms (model stays loaded). Shutdown: ~1 s, zero orphan processes across repeated runs.
 - Packaged CDP E2E (signed unpacked payload, isolated data dir): 12/12 — startup, search-only control, zero llama processes during search, chat open, streamed `PKG_AI_OK` assistant bubble, persisted turn in SQLite, graceful exit 0, no orphan server.
+- Release-closure runtime campaign (2026-09-12, same workstation/CPU/RAM, full record in `artifacts/release-closure-2026-09-12.json`):
+  - Search under inference (294-row index, 30–40 probes/phase): baseline median 2.6 ms (p95 6.8, max 9.1); model-idle median 2.6 ms; generating medians 1.4–1.6 ms (p95 ≤ 3.3) at 4/5/6 threads — no measurable degradation; Electron < 3% CPU, ~322 MB; llama ~14.4 GB, 50–73% total CPU.
+  - Thread matrix: decode flat (server 2.28–2.34 tok/s; bench tg64 2.57–2.58; bench pp32 8.15/8.60/9.42 for 4/5/6) — decode is bandwidth-bound, so the default 6 threads are retained with no production change.
+  - First-visible-token anatomy (SSE stage timing, reasoning never stored): constrained prompts ~30 s (≈1–6 s prompt eval + ≈25 s reasoning); open-ended 400-word prompt 293–380 s (687–858 reasoning tokens, ±15% run variance); warm reuse 173–178 s. Hidden reasoning dominates; motivates the Thinking/Responding phase UX.
+  - Cold starts (page-cache warm): direct server 10.1–11.2 s; app runtime 6.9–7.5 s. True post-reboot cold remains a user step.
+  - Offline isolation suite 27/27 (DNS-blackholed process, isolated profile): startup, search, AI open, zero pre-ready runtime, cold model start, constrained generation + streaming + persistence, cancel during reasoning (0 deltas, nothing persisted), second generation, reload persistence, loopback-only connected flows and listeners, graceful exit 0, zero orphans. OS firewall-rule isolation was blocked (Error 5, non-elevated); physical unplug remains the gold-standard user step.
+  - Portable wrapper matrix 8/8 healthy; exit code 2 not reproduced (see KNOWN_ISSUES).
 
 ## Remaining environment tests
 
-- Public-certificate clean-machine runs and portable-wrapper startup on this workstation (wrapper exits code 2; unpacked payload fully verified).
+- Public-certificate clean-machine runs (no Sandbox/Hyper-V/elevation in the agent session; enablement needs elevation). The distributable's runtime dir provably lacks `vcruntime140.dll`/`vcruntime140_1.dll`/`msvcp140.dll` (resolved from this dev machine's System32) — bundle or prerequisite decision required first.
+- Physical-unplug offline rerun (isolation-level suite passed 27/27; one-command handoff pending).
 - One-million-file execution.
 - ACL-denied, offline OneDrive, network, HDD/external, storage-full, and read-only media.
 - Deliberate native worker crash injection; restart recovery and forced worker error are covered.

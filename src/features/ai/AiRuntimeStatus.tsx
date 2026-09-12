@@ -22,6 +22,10 @@ export function AiRuntimeStatus({
 }: AiRuntimeStatusProps): React.ReactElement {
   const state = status?.state ?? 'stopped'
   const modelLabel = model?.name ?? 'Gemma 4 12B'
+  // Generation sub-state for long hidden-reasoning models. Restrained text
+  // only: no reasoning content, no fake progress, same busy tone and Stop
+  // action as before. Absent phase falls back to the previous wording.
+  const phase = status?.phase
 
   let text = 'Checking AI status…'
   let tone: 'idle' | 'busy' | 'ready' | 'error' = 'idle'
@@ -40,6 +44,8 @@ export function AiRuntimeStatus({
       text = generating ? 'Generating… your files stay untouched' : `${modelLabel} ● Local`
       tone = generating ? 'busy' : 'ready'
       if (generating) {
+        if (phase === 'thinking') text = 'Thinking… your files stay untouched'
+        else if (phase === 'responding') text = 'Responding… your files stay untouched'
         action = (
           <button type="button" className={styles.statusAction} onClick={onStop}>
             Stop
@@ -49,6 +55,8 @@ export function AiRuntimeStatus({
       break
     case 'generating':
       text = 'Generating… your files stay untouched'
+      if (phase === 'thinking') text = 'Thinking… your files stay untouched'
+      else if (phase === 'responding') text = 'Responding… your files stay untouched'
       tone = 'busy'
       action = (
         <button type="button" className={styles.statusAction} onClick={onStop}>

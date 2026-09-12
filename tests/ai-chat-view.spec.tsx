@@ -54,6 +54,46 @@ describe('AI chat view', () => {
     expect(crashed).toContain('Restart AI')
   })
 
+  it('distinguishes thinking from responding without exposing reasoning', () => {
+    const thinking = renderToStaticMarkup(
+      <AiRuntimeStatus
+        status={{ state: 'generating', phase: 'thinking' }}
+        model={null}
+        generating={true}
+        onRetry={vi.fn()}
+        onSelectModel={vi.fn()}
+        onStop={vi.fn()}
+      />
+    )
+    expect(thinking).toContain('Thinking…')
+    expect(thinking).toContain('Stop')
+    expect(thinking).toContain('aria-live="polite"')
+    expect(thinking).not.toContain('reasoning')
+    const responding = renderToStaticMarkup(
+      <AiRuntimeStatus
+        status={{ state: 'generating', phase: 'responding' }}
+        model={null}
+        generating={true}
+        onRetry={vi.fn()}
+        onSelectModel={vi.fn()}
+        onStop={vi.fn()}
+      />
+    )
+    expect(responding).toContain('Responding…')
+    expect(responding).toContain('Stop')
+    const fallback = renderToStaticMarkup(
+      <AiRuntimeStatus
+        status={{ state: 'generating' }}
+        model={null}
+        generating={true}
+        onRetry={vi.fn()}
+        onSelectModel={vi.fn()}
+        onStop={vi.fn()}
+      />
+    )
+    expect(fallback).toContain('Generating…')
+  })
+
   it('renders user and assistant messages with copy affordance', () => {
     const markup = renderToStaticMarkup(
       <AiConversation

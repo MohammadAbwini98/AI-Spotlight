@@ -110,20 +110,29 @@ export class AiRuntimeService implements AiProvider {
     const onExternalAbort = (): void => abort.abort()
     if (signal.aborted) onExternalAbort()
     else signal.addEventListener('abort', onExternalAbort, { once: true })
-    this.status = { ...this.status, state: 'generating' }
+    // Thinking until the first visible answer token arrives; hidden reasoning
+    // is never exposed, only the phase. Responding flips on first onToken.
+    this.status = { ...this.status, state: 'generating', phase: 'thinking' }
 
     try {
+      let responding = false
       const text = await this.client.chat({
         baseUrl: handle.baseUrl,
         messages: request.messages,
         signal: abort.signal,
-        onToken: events.onToken
+        onToken: (token) => {
+          if (!responding) {
+            responding = true
+            this.status = { ...this.status, phase: 'responding' }
+          }
+          events.onToken(token)
+        }
       })
       this.persistTurn(request, text)
-      this.status = { ...this.status, state: 'ready' }
+      this.status = { ...this.status, state: 'ready', phase: undefined }
       return text
     } catch (error) {
-      this.status = { ...this.status, state: 'ready' }
+      this.status = { ...this.status, state: 'ready', phase: undefined }
       if (error instanceof AiError) throw error
       throw new AiError('AI_GENERATION_FAILED', `Generation failed: ${String(error)}`)
     } finally {
@@ -181,11 +190,11 @@ export class AiRuntimeService implements AiProvider {
   }
 
   private async start(): Promise<AiRuntimeStatus> {
-    this.status = { state: 'starting' }
+    this.status = { state: 'starting', phase: 'preparing' }
     try {
       const manifest = this.loadManifest()
       const resolved = this.resolveModel(manifest)
-      this.status = { ...this.status, state: 'loading', modelId: manifest.id }
+      this.status = { ...this.status, state: 'loading', modelId: manifest.id, phase: 'preparing' }
       const modelPath = await assertValidModel(manifest, resolved.path)
       const executable = this.resolveRuntimeExecutable()
       if (isLowMemoryHost()) {

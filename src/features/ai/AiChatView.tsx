@@ -120,6 +120,17 @@ export function AiChatView({ onBack }: AiChatViewProps): React.ReactElement {
     }
   }, [finishGeneration])
 
+  // While generating, poll status so Thinking → Responding transitions surface
+  // mid-generation (status otherwise refreshes only when generation ends).
+  // Cheap synchronous IPC, active only during generation, no animation.
+  useEffect(() => {
+    if (!generating) return
+    const timer = setInterval(() => {
+      void refreshStatus()
+    }, 1500)
+    return () => clearInterval(timer)
+  }, [generating, refreshStatus])
+
   // Open immediately; start the runtime in the background without freezing UI.
   useEffect(() => {
     void refreshStatus()

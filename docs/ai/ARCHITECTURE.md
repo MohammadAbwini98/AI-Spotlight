@@ -120,7 +120,7 @@ Electron main process
 | `electron/main/ai/ai-errors.ts` | Structured error taxonomy plus UI messages |
 | `electron/main/ai/ai-provider.ts` | AiProvider seam and MockAiProvider for tests |
 | `electron/main/ipc/ai.ipc.ts` | Trusted handlers, 40 ms main-side delta batching, native GGUF import |
-| `electron/shared/` AI types/channels | `AiRole/Message/ChatRequest/RuntimeStatus/TokenDelta/Completion/Conversation/ModelInfo`, `AI_*` channels |
+| `electron/shared/` AI types/channels | `AiRole/Message/ChatRequest/RuntimeStatus/TokenDelta/Completion/Conversation/ModelInfo`, optional `AiGenerationPhase` (`preparing`/`thinking`/`responding`) on `AiRuntimeStatus`, `AI_*` channels |
 
 Streaming flows `llama-server -> LlamaClient -> AiRuntimeService -> main IPC
 (AI_CHAT_DELTA/COMPLETE/ERROR) -> preload -> React`. Stop cancels the

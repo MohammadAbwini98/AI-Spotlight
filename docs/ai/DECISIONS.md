@@ -242,3 +242,27 @@
 **Impact**: Honest performance section in `docs/ai/TESTING.md`; no production change.
 
 **Related Files**: `tests/ai-qualification.spec.ts`, `docs/ai/TESTING.md`
+
+### 2026-09-12 — Retain 6 AI Threads (Measured, Not Assumed)
+
+**Decision**: Keep `resolveAiThreadCount()` unchanged (6 threads on this 8-logical-CPU class). The 4/5/6 matrix showed decode is memory-bandwidth-bound (bench tg64 2.57–2.58 flat; server 2.28–2.34), prompt eval fastest at 6 threads (pp32 9.42 vs 8.15), total CPU 50–73%, and Spotlight search latency at its floor (~1.5 ms median) under inference at every setting — reducing threads buys no responsiveness and costs prefill speed.
+
+**Reason**: Measured application-wide behavior per the phase plan; first-visible latency is dominated by reasoning-token count (±15% run variance), not thread count.
+
+**Impact**: No production change; numbers in `artifacts/release-closure-2026-09-12.json`.
+
+**Alternatives Considered**: Reducing to 4/5 threads for headroom (rejected: no measured responsiveness gain).
+
+**Related Files**: `electron/main/ai/ai-config.ts`
+
+### 2026-09-12 — Generation-Phase UX Without Reasoning Disclosure
+
+**Decision**: Add an additive optional `AiGenerationPhase` (`preparing`/`thinking`/`responding`) to `AiRuntimeStatus`, set by `AiRuntimeService` at lifecycle boundaries (thinking at generation start, responding on first visible token, cleared on complete/cancel/error/shutdown), rendered by the status pill as Thinking…/Responding… with existing busy tone, Stop action, and aria-live announcement, refreshed by a 1.5 s poll active only while generating. Starting/Loading texts kept.
+
+**Reason**: Executable evidence shows 170–380 s of silent `generating` for open-ended prompts (reasoning never shown/persisted by design); users need honest state feedback during that window.
+
+**Impact**: Renderer polls one trivial IPC while generating; no IPC contract break (optional field, fallback text preserved); 5 new tests; live UI verification done. Ships with the next package (not in signed 1.0.1).
+
+**Alternatives Considered**: Push-based phase events (rejected: new channel for what polling covers); fake progress percentage (rejected by task constraints); changing Starting/Loading texts (rejected: minimal diff, existing tests).
+
+**Related Files**: `electron/shared/types.ts`, `electron/main/ai/ai-runtime.service.ts`, `src/features/ai/AiRuntimeStatus.tsx`, `src/features/ai/AiChatView.tsx`, `tests/ai-generation-phase.spec.ts`, `tests/ai-chat-view.spec.tsx`

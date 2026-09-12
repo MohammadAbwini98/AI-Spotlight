@@ -1439,3 +1439,41 @@
 - Provisioned: official llama.cpp b10909 CPU build (`resources/ai/runtime/`, gitignored), `gemma-4-12B-it-Q4_K_M.gguf` 7,381,382,176 bytes (ShahzebKhoso public HF, GGUFv3 verified), imported through the production import core into `D:\AiQual\models`.
 - Throughput methodology: content-callback rates (0.13-0.18) are NOT model speed; SSE frame analysis proves hardware-rate decode with reasoning excluded by design.
 - Env: Win10 10.0.19045, i7-4980HQ 8-logical, 32 GB RAM (22.6 free), commit `3f0dbdc` + qual changes.
+
+---
+
+### 2026-09-12 — Muse Spark (OpenCode) — AI Spotlight Release Closure & Performance Qualification
+
+**Agent**: Muse Spark (OpenCode)
+**Task**: Close release evidence gaps from `183c3e4`: baseline gates, P1 wrapper code-2 diagnosis, clean-machine assessment, enforced offline validation, search-under-inference + thread matrix, first-token anatomy, reasoning UX, cold-start variance, final release decision. No AI redesign.
+
+**Files Created**:
+- `artifacts/release-closure-2026-09-12.json` — full measurement record
+- `tests/ai-generation-phase.spec.ts` — 4 hermetic phase tests (test-local manifest + injected process/client fakes)
+
+**Files Modified**:
+- `electron/shared/types.ts` — additive optional `AiGenerationPhase` + `phase?` on `AiRuntimeStatus`
+- `electron/main/ai/ai-runtime.service.ts` — preparing/thinking/responding transitions, cleared on complete/cancel/error
+- `src/features/ai/AiRuntimeStatus.tsx` — Thinking…/Responding… pill text (fallback preserved, Stop + aria-live kept)
+- `src/features/ai/AiChatView.tsx` — 1.5 s status poll active only while generating
+- `tests/ai-chat-view.spec.tsx` — thinking/responding/fallback markup cases
+- `docs/ai/` current-state, features, architecture, testing, decisions, known-issues, task log
+
+**Tests Run**:
+- Baseline at `183c3e4` (HEAD confirmed, tree clean, 0 ahead/behind): typecheck PASS, lint PASS (0 warnings), 142 passed + 15 qual skipped, build PASS
+- After item-8 change: typecheck PASS, lint PASS, **147 passed** + 15 skipped (30 files), build PASS
+- Portable wrapper matrix 8/8 healthy (own dir, other cwd, spaced paths, second instance → 0, locked temp → 0, `--version`, CDP passthrough, graceful close → wrapper 0 + temp cleanup); exit code 2 NOT REPRODUCED — classified environment-specific, no code change
+- Thread matrix 4/5/6 (same prompt, ctx 8192): decode 2.34/2.29/2.28 tok/s, bench tg64 2.57–2.58 flat, CPU 73/62/50%, search medians 1.6/1.5/1.4 ms vs 2.6 baseline — default 6 retained, no change
+- First-token anatomy (SSE stage timing, reasoning never stored): constrained ~30 s, open-ended 293–380 s reasoning (687–858 tokens), reuse 173–178 s
+- Offline isolation suite 27/27 (DNS-blackholed process + isolated profile; loopback-only flows/listeners proven; graceful exit 0; zero orphans)
+- Generation-phase UX live-verified in real UI (Thinking pill + phase flips via real IPC; cancel/complete transitions correct)
+- Release integrity (`--verify`) re-passed after test cleanup; signatures Valid on both distributables
+
+**Tests Not Run**: real-model qual file (env-gated, unchanged — prior 15/15 stands); clean-machine run (no Sandbox/Hyper-V binary; enablement needs elevation — Error 5/COMException captured); physical-unplug offline rerun (firewall-rule isolation blocked, Error 5; DNS-blackhole suite is the in-session substitute); true post-reboot cold start (cache cannot be purged unelevated)
+
+**Result**: Done — SEARCH-UNDER-INFERENCE MEASURED + OFFLINE-ISOLATION PASS (27/27) + WRAPPER-HEALTHY-HERE; clean-machine/physical-unplug are scripted user handoffs
+**Notes**:
+- New P1: distributable lacks `vcruntime140.dll`/`vcruntime140_1.dll`/`msvcp140.dll` (import-proven, absent from package, present in dev System32) — bundle-or-prerequisite decision needed before clean-machine AI pass.
+- Reasoning UX is in source + tests only; the signed 1.0.1 distributable predates it (ships next package + re-verification).
+- Working tree left uncommitted (5 modified + 2 new files); perf/offline driver scripts live outside the repo under Temp (`opencode/perf/`).
+- Env during campaign: 32 GB RAM (~24 free), i7-4980HQ, 200% display, model `D:\AiQual\models`, app profile isolated for offline run.
