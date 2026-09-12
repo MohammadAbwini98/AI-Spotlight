@@ -71,6 +71,7 @@ describe('AI IPC validation', () => {
       IPC.AI_GET_CONVERSATIONS,
       IPC.AI_GET_MODEL_INFO,
       IPC.AI_SELECT_MODEL,
+      IPC.AI_CANCEL_IMPORT,
       IPC.AI_SHUTDOWN
     ]) {
       expect(() => validateIpcArguments(channel, [])).not.toThrow()
@@ -104,6 +105,8 @@ describe('AI IPC validation', () => {
       'deleteConversation',
       'getModelInfo',
       'selectModel',
+      'cancelImport',
+      'onImportProgress',
       'shutdown'
     ]) {
       expect(preload).toContain(method)

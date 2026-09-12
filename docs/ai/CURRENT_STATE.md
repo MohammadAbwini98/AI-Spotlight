@@ -1,12 +1,12 @@
 # CURRENT_STATE.md — Live Project Status
 
-> **Last Updated**: 2026-09-11
+> **Last Updated**: 2026-09-12
 
 ## Current status
 
-DeepDive (repository: Spotlight-Todo) is a working Electron 43/React desktop application with SQLite/FTS5 file search, Todo lists/tasks/notes, settings, hardened portable/local data-path handling, system tray/global shortcuts, and the Liquid Glass overlay UI. Source is version-controlled on `main` and pushed to `git@github.com:MohammadAbwini98/AI-Spotlight.git` (initial commit `56fa4a4`, verified `origin/main` in sync).
+DeepDive (repository: Spotlight-Todo) is a working Electron 43/React desktop application with SQLite/FTS5 file search, Todo lists/tasks/notes, settings, hardened portable/local data-path handling, system tray/global shortcuts, and the Liquid Glass overlay UI. Source is version-controlled on `main` and pushed to `git@github.com:MohammadAbwini98/AI-Spotlight.git`.
 
-A dedicated local AI chat (`search | ai | todo | settings`) is implemented against a lazy llama.cpp runtime configured for Gemma 4 12B Q4_K_M. The runtime executable and GGUF are provisioned offline and are not bundled: the AI screen, IPC, validation, persistence (migration 011), settings section, and 46 new regression tests pass, but no real-model smoke test has run on this workstation.
+A dedicated local AI chat (`search | ai | todo | settings`) is implemented against a lazy llama.cpp runtime configured for Gemma 4 12B Q4_K_M — and it is now REAL-MODEL + PACKAGED verified on this workstation: official llama-server b10909, 7.38 GB Q4_K_M GGUF, 15/15 real-model qualification tests, 12/12 packaged CDP-driven E2E gates, release signatures/migrations/SHA-256 valid. Runtime binaries and the GGUF are provisioned locally and gitignored, never committed.
 
 ## Confirmed working
 
@@ -65,6 +65,8 @@ A dedicated local AI chat (`search | ai | todo | settings`) is implemented again
 - Loopback-only lazy llama.cpp lifecycle (ensureReady/generate/cancel/shutdown) with single-generation CPU policy, bounded health polling, crash-to-error recovery, and quit-time termination.
 - Main-process GGUF resolution/validation (explicit path, managed `%LOCALAPPDATA%\SpotlightTodo\models`, manifest match, optional SHA-256) and native trusted model import.
 - Settings AI section reports model, runtime status, and model path with a trusted Select control.
+- Real-model qualification (i7-4980HQ/8 threads/32 GB RAM, llama-server b10909, `gemma-4-12B-it-Q4_K_M.gguf` 7.38 GB): cold start 11-51 s, first visible token ~27 s (extensive reasoning preamble), steady decode ~2.6 tok/s (llama-bench tg64), model-loaded RSS ~14.8 GB, cancel ~16 ms, shutdown ~1 s with zero orphan processes.
+- Packaged signed Portable/Setup produced via `release:local`; unpacked payload verified end-to-end over CDP (search isolation, chat open, streamed assistant reply persisted to SQLite, graceful exit 0, no orphan server).
 
 ## Synchronization performance (100,000 real files)
 

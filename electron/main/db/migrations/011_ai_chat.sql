@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS ai_messages (
 );
 
 CREATE INDEX IF NOT EXISTS idx_ai_messages_conversation
-  ON ai_messages(conversation_id, rowid);
+  ON ai_messages(conversation_id, created_at);
 
 CREATE INDEX IF NOT EXISTS idx_ai_conversations_updated
   ON ai_conversations(updated_at DESC);

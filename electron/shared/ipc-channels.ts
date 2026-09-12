@@ -75,6 +75,8 @@ export const IPC = {
   AI_DELETE_CONVERSATION: 'ai:deleteConversation',
   AI_GET_MODEL_INFO: 'ai:getModelInfo',
   AI_SELECT_MODEL: 'ai:selectModel',
+  AI_CANCEL_IMPORT: 'ai:cancelImport',
+  AI_IMPORT_PROGRESS: 'ai:importProgress', // main → renderer (push)
   AI_SHUTDOWN: 'ai:shutdown'
 } as const
 

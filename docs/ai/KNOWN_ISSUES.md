@@ -1,13 +1,12 @@
 # KNOWN_ISSUES.md — Current Risks and Limitations
 
-> **Last Updated**: 2026-09-11
+> **Last Updated**: 2026-09-12
 
 ## Active
 
-- **Local AI runtime not bundled:** `llama-server.exe` and its DLLs are not in the repository; place the pinned-minimum build under `resources/ai/runtime/` at packaging time (see `resources/ai/README.md`). Until then the AI screen reports `AI_RUNTIME_NOT_FOUND` with setup guidance.
-- **Model provisioned offline:** the Gemma 4 12B Q4_K_M GGUF is not bundled and has no canonical SHA-256 yet (`verifySha256: false`); import it once via AI Chat → Select model file. Hash enforcement activates when a canonical hash ships in the manifest.
-- **Real-model validation pending:** streaming, Stop-reuse, tokens/sec, RAM, cold-start, and quit-cleanliness with the actual 12B model are unexecuted on this workstation.
-- **Model import progress:** large GGUF copies run async without blocking the renderer, but no byte-level progress UI is shown yet (P2).
+- **Portable wrapper startup (this workstation):** `DeepDive-1.0.1-portable.exe` exits code 2 with no log while the identical signed unpacked payload (`win-unpacked/DeepDive.exe`) launches, runs, and passes 12/12 packaged E2E gates. Stock electron-builder NSIS wrapper, no project custom code; clean-machine follow-up required (P1).
+- **First visible token latency:** Gemma 4 emits a long `reasoning_content` preamble (~25 s on this CPU) before visible tokens; reasoning is never shown or persisted. A visible "thinking" indicator is a P2 enhancement; the status pill already reports Generating.
+- **Model provisioning:** runtime binaries and the 7.38 GB GGUF are gitignored and provisioned per-machine (`resources/ai/runtime/`, managed models dir); C: needs ~8 GB free for the managed copy. No canonical SHA-256 published yet (`verifySha256: false`).
 - **Native blur variance:** transparent-window blur strength varies by Windows compositor/GPU; tint and Reduced Transparency preserve readability.
 - **Native resize variance:** resizing the transparent BrowserWindow between compact and expanded heights can occasionally create a compositor frame outlier on Windows even when renderer animation frames remain at refresh cadence.
 - **Watcher portability:** recursive `fs.watch` is Windows-validated. Reconciliation is required after downtime/trust loss; other platforms need validation.

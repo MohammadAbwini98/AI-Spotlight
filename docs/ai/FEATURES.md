@@ -1,6 +1,6 @@
 # FEATURES.md — Confirmed DeepDive Feature Inventory
 
-> **Last Updated**: 2026-09-11
+> **Last Updated**: 2026-09-12
 
 ## Desktop shell and design
 
@@ -56,6 +56,8 @@
 - Gemma 4 12B Q4_K_M manifest (`resources/ai/model-manifest.json`, no fabricated checksum); model resolved from explicit override or managed `%LOCALAPPDATA%\SpotlightTodo\models`, validated before launch, importable offline through a native dialog.
 - Settings AI section: model, runtime status, model path, trusted model selection.
 - Search/AI privacy separation: search uses SQLite only; the model receives only explicitly submitted text.
+- Real-model verified on this workstation (llama-server b10909, Gemma 4 12B Q4_K_M, 15/15 qualification + 12/12 packaged E2E): streaming, Stop/reuse, multi-turn, Unicode, Markdown/code, persistence, restart reload, cascade delete, malformed-IPC rejection, runtime/model-unavailable states, crash recovery, and quit hygiene with no orphan processes.
+- Offline-by-construction: zero runtime public-network URLs in main/preload/renderer production bundles; loopback-only AI traffic; model import works from local disk.
 
 ## Storage and packaging
 
@@ -71,7 +73,7 @@
 ## Not fully verified
 
 - Public-certificate and clean-machine Portable/Setup runtime.
-- Real Gemma 4 12B model load, streaming, Stop, and quit-cleanliness with the packaged app (runtime + GGUF provisioned offline; not yet executed).
+- Portable wrapper startup on this workstation (exits code 2; identical unpacked payload verified healthy) — clean-machine follow-up.
 - Full SQLite encryption at rest and key recovery.
 - One-million-file execution on this workstation.
 - OneDrive/network/ACL/storage-full hardware and environment scenarios.

@@ -82,17 +82,29 @@ export class AiRuntimeService implements AiProvider {
     events: GenerateEvents,
     signal: AbortSignal
   ): Promise<string> {
+    // Reserve synchronously: the BUSY check must be atomic across the awaits
+    // below, otherwise two same-tick callers could both start generating.
     if (this.activeRequestId) {
       throw new AiError('AI_BUSY', 'The AI is already generating a response.')
     }
-    const status = await this.ensureReady()
+    this.activeRequestId = request.requestId
+    let status: AiRuntimeStatus
+    try {
+      status = await this.ensureReady()
+    } catch (error) {
+      this.activeRequestId = null
+      throw error
+    }
     if (status.state !== 'ready') {
+      this.activeRequestId = null
       throw new AiError(status.errorCode ?? 'AI_NOT_READY', status.error ?? 'AI is not ready.')
     }
     const handle = this.processes.getHandle()
-    if (!handle) throw new AiError('AI_SERVER_UNAVAILABLE', 'AI server is unavailable.')
+    if (!handle) {
+      this.activeRequestId = null
+      throw new AiError('AI_SERVER_UNAVAILABLE', 'AI server is unavailable.')
+    }
 
-    this.activeRequestId = request.requestId
     const abort = new AbortController()
     this.activeAbort = abort
     const onExternalAbort = (): void => abort.abort()

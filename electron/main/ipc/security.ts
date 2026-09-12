@@ -184,6 +184,7 @@ export function validateIpcArguments(channel: string, args: unknown[]): void {
     case IPC.AI_GET_CONVERSATIONS:
     case IPC.AI_GET_MODEL_INFO:
     case IPC.AI_SELECT_MODEL:
+    case IPC.AI_CANCEL_IMPORT:
     case IPC.AI_SHUTDOWN:
       exactArgs(args, 0)
       return

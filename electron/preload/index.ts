@@ -21,6 +21,7 @@ import type {
   AiCompletion,
   AiConversation,
   AiConversationMessage,
+  AiImportProgress,
   AiModelInfo,
   AiRuntimeStatus,
   AiTokenDelta
@@ -169,6 +170,13 @@ const api = {
       ipcRenderer.invoke(IPC.AI_DELETE_CONVERSATION, conversationId),
     getModelInfo: (): Promise<ApiResult<AiModelInfo>> => ipcRenderer.invoke(IPC.AI_GET_MODEL_INFO),
     selectModel: (): Promise<ApiResult<AiModelInfo>> => ipcRenderer.invoke(IPC.AI_SELECT_MODEL),
+    cancelImport: (): Promise<ApiResult<void>> => ipcRenderer.invoke(IPC.AI_CANCEL_IMPORT),
+    onImportProgress: (cb: (progress: AiImportProgress) => void): (() => void) => {
+      const handler = (_: Electron.IpcRendererEvent, progress: AiImportProgress): void =>
+        cb(progress)
+      ipcRenderer.on(IPC.AI_IMPORT_PROGRESS, handler)
+      return () => ipcRenderer.removeListener(IPC.AI_IMPORT_PROGRESS, handler)
+    },
     shutdown: (): Promise<ApiResult<void>> => ipcRenderer.invoke(IPC.AI_SHUTDOWN)
   }
 }

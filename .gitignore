@@ -15,3 +15,5 @@ out/
 *.asar
 *.tsbuildinfo
 electron.vite.config.*.mjs
+# Provisioned llama.cpp binaries (packaging/qualification time only, never committed).
+resources/ai/runtime/

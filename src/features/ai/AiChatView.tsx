@@ -4,6 +4,7 @@ import { LiquidGlassSurface } from '../../components/LiquidGlassSurface/LiquidGl
 import type {
   AiConversation,
   AiConversationMessage,
+  AiImportProgress,
   AiMessage as SharedAiMessage,
   AiModelInfo,
   AiRuntimeStatus
@@ -46,6 +47,8 @@ export function AiChatView({ onBack }: AiChatViewProps): React.ReactElement {
   const [messages, setMessages] = useState<UiChatMessage[]>([])
   const [generating, setGenerating] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  const [importing, setImporting] = useState(false)
+  const [importProgress, setImportProgress] = useState<AiImportProgress | null>(null)
 
   const requestIdRef = useRef<string | null>(null)
   const bufferRef = useRef('')
@@ -106,10 +109,14 @@ export function AiChatView({ onBack }: AiChatViewProps): React.ReactElement {
       setMessages((current) => current.filter((message) => !message.streaming))
       finishGeneration()
     })
+    const offImport = window.electronAPI.ai.onImportProgress((progress) => {
+      setImportProgress(progress)
+    })
     return () => {
       offDelta()
       offComplete()
       offError()
+      offImport()
     }
   }, [finishGeneration])
 
@@ -230,7 +237,10 @@ export function AiChatView({ onBack }: AiChatViewProps): React.ReactElement {
   }, [refreshStatus])
 
   const handleSelectModel = useCallback(async (): Promise<void> => {
+    setImporting(true)
+    setImportProgress(null)
     const result = await window.electronAPI.ai.selectModel()
+    setImporting(false)
     if (result.ok) {
       setModel(result.data)
       setNotice(null)
@@ -239,6 +249,10 @@ export function AiChatView({ onBack }: AiChatViewProps): React.ReactElement {
       setNotice(result.error.message)
     }
   }, [refreshStatus])
+
+  const handleCancelImport = useCallback((): void => {
+    void window.electronAPI.ai.cancelImport()
+  }, [])
 
   const handleResend = useCallback((): void => {
     const lastUser = [...stateRef.current.messages]
@@ -296,13 +310,49 @@ export function AiChatView({ onBack }: AiChatViewProps): React.ReactElement {
                 DeepDive works fully offline. Select the {model.filename} file once and it is
                 imported into the managed model folder — app updates never delete or re-download it.
               </p>
-              <button
-                type="button"
-                className={styles.setupButton}
-                onClick={() => void handleSelectModel()}
-              >
-                Select model file…
-              </button>
+              {importing ? (
+                <div className={styles.importProgress} role="status" aria-live="polite">
+                  <div className={styles.importBar}>
+                    <div
+                      className={styles.importFill}
+                      style={{
+                        width: `${
+                          importProgress && importProgress.totalBytes > 0
+                            ? Math.min(
+                                100,
+                                Math.round(
+                                  (importProgress.bytesCopied / importProgress.totalBytes) * 100
+                                )
+                              )
+                            : 0
+                        }%`
+                      }}
+                    />
+                  </div>
+                  <div className={styles.importMeta}>
+                    <span>
+                      {importProgress
+                        ? `${Math.round(importProgress.bytesCopied / 1048576)} / ${Math.round(importProgress.totalBytes / 1048576)} MB`
+                        : 'Starting import…'}
+                    </span>
+                    <button
+                      type="button"
+                      className={styles.noticeAction}
+                      onClick={handleCancelImport}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.setupButton}
+                  onClick={() => void handleSelectModel()}
+                >
+                  Select model file…
+                </button>
+              )}
             </div>
           ) : (
             <AiTranscript messages={messages} generating={generating} />

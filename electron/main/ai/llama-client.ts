@@ -80,7 +80,7 @@ export class LlamaClient {
         }
         throw new AiError('AI_GENERATION_FAILED', 'The AI response timed out.')
       }
-      const { done, value } = await reader.read()
+      const { done, value } = await readChunk(reader, options.signal)
       if (done) break
       lastChunkAt = Date.now()
       buffer += decoder.decode(value, { stream: true })
@@ -101,6 +101,26 @@ export class LlamaClient {
     }
     void finishReason
     return fullText
+  }
+}
+
+/** Reads one stream chunk, mapping mid-read aborts to cancellation. */
+async function readChunk(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  signal: AbortSignal
+): Promise<ReadableStreamReadResult<Uint8Array>> {
+  try {
+    return await reader.read()
+  } catch (error) {
+    if (signal.aborted) {
+      try {
+        await reader.cancel()
+      } catch {
+        // Stream already closed.
+      }
+      throw new AiError('AI_GENERATION_CANCELLED', 'Generation was cancelled.')
+    }
+    throw error
   }
 }
 

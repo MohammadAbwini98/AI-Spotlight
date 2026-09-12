@@ -220,3 +220,25 @@
 **Alternatives Considered**: Hugging Face download-at-runtime (rejected as the only path; no network dependency at runtime).
 
 **Related Files**: `electron/main/ai/model-resolver.ts`, `electron/main/ai/model-validator.ts`, `resources/ai/README.md`
+
+### 2026-09-12 — Real-Runtime Defect Fixes (Evidence-Driven)
+
+**Decision**: Fix three defects proven by real-model execution, no redesign: (1) migration 011 indexed the pseudo-column `rowid` (`no such column: rowid` on Electron ABI) → index `(conversation_id, created_at)`; (2) mid-read aborts surfaced as `AI_GENERATION_FAILED` → map aborted reads to `AI_GENERATION_CANCELLED` in `readChunk`; (3) the `AI_BUSY` check raced across the `ensureReady` await → reserve `activeRequestId` synchronously with release on early failure. Also made re-import idempotent (valid managed copy reused, partial-file + cancel semantics kept).
+
+**Reason**: Each failure was reproduced executably (migration script, qual cancel/busy tests) before changing code.
+
+**Impact**: 15/15 real-model qualification, 142 unit/integration tests, 12/12 packaged E2E.
+
+**Alternatives Considered**: No architectural changes were needed; speculative changes without failing evidence were refused.
+
+**Related Files**: `electron/main/db/migrations/011_ai_chat.sql`, `electron/main/ai/llama-client.ts`, `electron/main/ai/ai-runtime.service.ts`, `electron/main/ai/model-import.ts`, `tests/ai-qualification.spec.ts`
+
+### 2026-09-12 — Throughput Methodology (Reasoning vs Visible Tokens)
+
+**Decision**: Report hardware decode throughput from llama-bench (tg64 2.57 tok/s) and first-visible-token/user-perceived latency from qualification; never present content-callback rates as model speed, because Gemma 4's extensive `reasoning_content` deltas are intentionally excluded from UI and persistence.
+
+**Reason**: Naive per-callback measurement read 0.13-0.18 tok/s and falsely suggested a 14x regression; direct SSE frame analysis proved the server decodes at hardware rate.
+
+**Impact**: Honest performance section in `docs/ai/TESTING.md`; no production change.
+
+**Related Files**: `tests/ai-qualification.spec.ts`, `docs/ai/TESTING.md`

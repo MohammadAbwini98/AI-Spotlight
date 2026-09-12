@@ -1,5 +1,4 @@
 import { app, dialog } from 'electron'
-import { copyFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { IPC } from '../../shared/ipc-channels'
 import type {
@@ -14,8 +13,8 @@ import type {
 } from '../../shared/types'
 import { aiUserMessage } from '../ai/ai-errors'
 import { AiRuntimeService } from '../ai/ai-runtime.service'
-import { defaultManagedModelsDir, loadModelManifest } from '../ai/model-resolver'
-import { validateModelFile } from '../ai/model-validator'
+import { importModelFile } from '../ai/model-import'
+import { defaultManagedModelsDir } from '../ai/model-resolver'
 import { getDb } from '../db/database'
 import { resolveDataPath } from '../storage/paths'
 import { registerTrustedHandler } from './security'
@@ -178,7 +177,7 @@ export function registerAiHandlers(): void {
 
   // Native trusted import: user picks a GGUF once, main validates and copies it
   // into the managed model directory with an async (non-blocking) copy.
-  registerTrustedHandler(IPC.AI_SELECT_MODEL, async (): Promise<ApiResult<AiModelInfo>> => {
+  registerTrustedHandler(IPC.AI_SELECT_MODEL, async (event): Promise<ApiResult<AiModelInfo>> => {
     try {
       const picked = await dialog.showOpenDialog({
         title: 'Select Gemma GGUF model',
@@ -191,38 +190,49 @@ export function registerAiHandlers(): void {
           error: { code: 'AI_GENERATION_CANCELLED', message: 'Model selection was cancelled.' }
         }
       }
+      if (activeImport) {
+        return {
+          ok: false,
+          error: { code: 'AI_BUSY', message: 'A model import is already running.' }
+        }
+      }
       const source = picked.filePaths[0]
       const resourcesDir = app.isPackaged
         ? process.resourcesPath
         : join(app.getAppPath(), 'resources')
-      const manifest = loadModelManifest(join(resourcesDir, 'ai', 'model-manifest.json'))
-      const managedDir = defaultManagedModelsDir(resolveDataPath())
-      await mkdir(managedDir, { recursive: true })
-      const destination = join(managedDir, manifest.filename)
-      const sourceValidation = await validateModelFile(
-        { ...manifest, filename: source.split(/[/\\]/).pop() ?? '' },
-        source
-      )
-      if (!sourceValidation.ok && sourceValidation.code !== 'AI_MODEL_UNSUPPORTED') {
-        return {
-          ok: false,
-          error: { code: sourceValidation.code, message: aiUserMessage(sourceValidation.code) }
-        }
-      }
-      if (source !== destination) {
-        await copyFile(source, destination)
-      }
-      const finalValidation = await validateModelFile(manifest, destination)
-      if (!finalValidation.ok) {
-        return {
-          ok: false,
-          error: { code: finalValidation.code, message: aiUserMessage(finalValidation.code) }
-        }
+      const sender = event.sender
+      const abort = new AbortController()
+      activeImport = abort
+      try {
+        await importModelFile(
+          source,
+          {
+            resourcesDir,
+            managedModelsDir: defaultManagedModelsDir(resolveDataPath())
+          },
+          {
+            signal: abort.signal,
+            onProgress: (progress) => {
+              if (!sender.isDestroyed()) sender.send(IPC.AI_IMPORT_PROGRESS, progress)
+            }
+          }
+        )
+      } finally {
+        if (activeImport === abort) activeImport = null
       }
       return { ok: true, data: await getService().getModelInfo() }
     } catch (error) {
+      const code = toAiErrorCode(error)
+      if (code === 'AI_GENERATION_CANCELLED') {
+        return { ok: false, error: { code, message: 'Model import was cancelled.' } }
+      }
       return { ok: false, error: { code: 'AI_MODEL_INVALID', message: String(error) } }
     }
+  })
+
+  registerTrustedHandler(IPC.AI_CANCEL_IMPORT, (): ApiResult<void> => {
+    activeImport?.abort()
+    return { ok: true, data: undefined }
   })
 
   registerTrustedHandler(IPC.AI_SHUTDOWN, async (): Promise<ApiResult<void>> => {
@@ -232,6 +242,8 @@ export function registerAiHandlers(): void {
 }
 
 const activeGenerations = new Map<string, AbortController>()
+
+let activeImport: AbortController | null = null
 
 const AI_ERROR_CODES = new Set([
   'AI_RUNTIME_NOT_FOUND',

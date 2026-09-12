@@ -1399,3 +1399,43 @@
 - Phase 0 baseline at `ac57a4e`: typecheck/lint/87 tests/build all PASS; no prior AI code (grep clean).
 - Discrepancies resolved from source evidence: AI reuses 640px height (no validator change); SHA-256 stays opt-in (no canonical hash); `ssh-agent` Disabled is irrelevant (IdentityFile direct).
 - Privacy: search never calls `electronAPI.ai`; AI persists only visible user/assistant text; no file/Todo content auto-fed.
+
+---
+
+### 2026-09-12 — Muse Spark (OpenCode) — AI Final Runtime Qualification & Release Gate
+
+**Agent**: Muse Spark (OpenCode)
+**Task**: Move AI from implementation-pass to REAL-MODEL + PACKAGED-OFFLINE VERIFIED, starting at `3f0dbdc`. No redesign without failing evidence.
+
+**Files Created**:
+- `electron/main/ai/model-import.ts` (extracted import core: validate → streamed copy with throttled progress → partial-file discipline → authoritative revalidation; idempotent re-import)
+- `tests/ai-import.spec.ts` (6 tests: validation, copy, progress, cancel, partial cleanup)
+- `tests/ai-qualification.spec.ts` (15 tests, env-gated `SPOTLIGHT_TODO_REAL_MODEL=1`, excluded from default gate)
+
+**Files Modified**:
+- `electron/main/db/migrations/011_ai_chat.sql` — rowid pseudo-column index (failed on Electron ABI) → `(conversation_id, created_at)`
+- `electron/main/ai/llama-client.ts` — mid-read aborts map to `AI_GENERATION_CANCELLED` via `readChunk`
+- `electron/main/ai/ai-runtime.service.ts` — atomic `AI_BUSY` reservation across the `ensureReady` await
+- `electron/main/ipc/ai.ipc.ts`, `security.ts`, `preload/index.ts`, `shared/ipc-channels.ts`, `shared/types.ts` — `AI_IMPORT_PROGRESS` push, `AI_CANCEL_IMPORT`, single-import policy
+- `src/features/ai/AiChatView.tsx`, `AiChatView.module.css` — import progress bar + cancel
+- `tests/ai-ipc.spec.ts`, `tests/ai-runtime.spec.ts` — cancel/import channel, occupied-port, 500-health, missing-exe cases
+- `.gitignore` — `resources/ai/runtime/` provisioned binaries never committed
+- `docs/ai/` state, features, testing, issues, decisions, commands, task log
+
+**Tests Run**:
+- Baseline at `3f0dbdc`: typecheck PASS, lint PASS, 133/133 PASS, build PASS, migrations 001-011 contiguous, renderer grep clean
+- `npm test`: 29 files, 142 passed (+15 qual skipped)
+- Real-model qual 15/15: short/multi-turn/long/Unicode/Markdown/stream/cancel/reuse/busy/restart-reload/cascade/malformed-IPC/runtime-unavailable/model-unavailable/crash-recovery; zero unhandled rejections
+- llama-bench (Haswell, 6 threads): pp32 9.42 tok/s, tg64 2.57 tok/s; cold start 11-51 s; first visible token ~25-29 s (reasoning preamble, never persisted); RSS ~14.8 GB; cancel ~16 ms; shutdown ~1 s, no orphans
+- Migration 011 on Electron ABI: fresh + 010→011 upgrade PASS (cascade verified)
+- `release:local --force`: signatures, migrations, SHA-256 inventory valid; packaged 011 fixed; runtime/manifest/migrations present and signed
+- Packaged CDP E2E (signed unpacked payload): 12/12 — startup, search-only control, zero llama during search, chat open, streamed `PKG_AI_OK` assistant bubble, SQLite-persisted turn, graceful exit 0, no orphan server
+- Bundle audit: zero runtime public-network URLs in main/preload/renderer (offline-by-construction; firewall-rule method unavailable in this session)
+
+**Tests Not Run**: clean-machine portable/setup runs (portable wrapper exits code 2 here; unpacked payload fully verified — P1 follow-up)
+
+**Result**: Done — REAL MODEL PASS + PACKAGED PASS + OFFLINE-BY-CONSTRUCTION PASS + SEARCH REGRESSION PASS + PROCESS CLEANUP PASS
+**Notes**:
+- Provisioned: official llama.cpp b10909 CPU build (`resources/ai/runtime/`, gitignored), `gemma-4-12B-it-Q4_K_M.gguf` 7,381,382,176 bytes (ShahzebKhoso public HF, GGUFv3 verified), imported through the production import core into `D:\AiQual\models`.
+- Throughput methodology: content-callback rates (0.13-0.18) are NOT model speed; SSE frame analysis proves hardware-rate decode with reasoning excluded by design.
+- Env: Win10 10.0.19045, i7-4980HQ 8-logical, 32 GB RAM (22.6 free), commit `3f0dbdc` + qual changes.

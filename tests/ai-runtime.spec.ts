@@ -46,6 +46,29 @@ describe('llama.cpp process policy', () => {
     expect(port).toBeGreaterThan(0)
   })
 
+  it('never hands out an occupied port', async () => {
+    const occupied = createServer()
+    await new Promise<void>((resolve) => occupied.listen(0, '127.0.0.1', resolve))
+    const taken = (occupied.address() as AddressInfo).port
+    const picked = await pickFreeLoopbackPort()
+    expect(picked).not.toBe(taken)
+    occupied.close()
+  })
+
+  it('refuses to start without a runtime executable', async () => {
+    const { LlamaProcessManager } = await import('../electron/main/ai/llama-process-manager')
+    const manager = new LlamaProcessManager()
+    await expect(
+      manager.start({
+        executablePath: 'C:\\definitely\\absent\\llama-server.exe',
+        modelPath: 'C:\\models\\m.gguf',
+        threads: 2,
+        contextSize: 1024
+      })
+    ).rejects.toMatchObject({ code: 'AI_RUNTIME_NOT_FOUND' })
+    expect(manager.isRunning()).toBe(false)
+  })
+
   it('polls health with a timeout instead of sleeping blindly', async () => {
     const server = createServer((req, res) => {
       if (req.url === '/health') {
@@ -65,6 +88,18 @@ describe('llama.cpp process policy', () => {
     await expect(waitForHealth(`http://127.0.0.1:${port}`, 300, 50)).rejects.toMatchObject({
       code: 'AI_RUNTIME_TIMEOUT'
     })
+  })
+
+  it('treats an unhealthy server as not ready', async () => {
+    const failing = createServer((_req, res) => {
+      res.writeHead(500).end('broken')
+    })
+    await new Promise<void>((resolve) => failing.listen(0, '127.0.0.1', resolve))
+    const port = (failing.address() as AddressInfo).port
+    await expect(waitForHealth(`http://127.0.0.1:${port}`, 300, 50)).rejects.toMatchObject({
+      code: 'AI_RUNTIME_TIMEOUT'
+    })
+    failing.close()
   })
 })
 

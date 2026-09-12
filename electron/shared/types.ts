@@ -285,6 +285,11 @@ export interface AiModelInfo {
   runtime: string
 }
 
+export interface AiImportProgress {
+  bytesCopied: number
+  totalBytes: number
+}
+
 // Renderer-enforced request bounds. The main process re-validates every value
 // at runtime (see electron/main/ipc/security.ts) and never trusts these.
 export const AI_MAX_MESSAGE_CHARS = 8000

@@ -1,10 +1,11 @@
 # TESTING.md — Test and Validation Strategy
 
-> **Last Updated**: 2026-09-11
+> **Last Updated**: 2026-09-12
 
 ## Automated suites
 
-- `npm test`: 133 tests across 28 files: all previous coverage plus AI runtime configuration, model manifest/resolution/validation, llama.cpp loopback/spawn/health/SSE/error-taxonomy policy, AI IPC validation and narrow preload surface, AI conversation persistence and migration 011 schema, provider abstraction and search/AI separation audits, safe Markdown projection, and AI chat-view rendering states.
+- `npm test`: 142 tests across 29 files (+1 env-gated real-model file): all previous coverage plus AI runtime configuration, model manifest/resolution/validation, llama.cpp loopback/spawn/health/SSE/error-taxonomy policy, AI IPC validation and narrow preload surface, AI conversation persistence and migration 011 schema, native import (progress/cancel/partial-cleanup/idempotent re-import), provider abstraction and search/AI separation audits, safe Markdown projection, and AI chat-view rendering states.
+- `SPOTLIGHT_TODO_REAL_MODEL=1 SPOTLIGHT_TODO_QUAL_DATA=<dir> npx vitest run tests/ai-qualification.spec.ts`: 15/15 real-model tests against the production `AiRuntimeService` (short/multi-turn/long/Unicode/Markdown/streaming/cancel/reuse/busy/restart-reload/cascade/malformed-IPC/runtime-unavailable/model-unavailable/crash-recovery). Requires provisioned `resources/ai/runtime/llama-server.exe` and a staged Q4_K_M GGUF; excluded from the default gate by design.
 - `npm run test:sync`: Electron-ABI real-file/worker/SQLite/WAL/FTS integration.
 - `npm run typecheck`: Node and web TypeScript projects.
 - `npm run build`: production main/worker/preload/renderer bundles.
@@ -47,10 +48,18 @@
 - `capture:design` exercises the production in-place rich Task note surface and verifies the contenteditable replacement, boundary-contained selection toolbar, slash-command keyboard execution/removal, table presence and block isolation, textarea removal, and existing outside dismissal.
 - Migration 010 was executed over a legacy in-memory Electron-ABI SQLite database; original content, the plain/Markdown projections, task-search text, and `integrity_check=ok` were verified.
 
+## Real-model measurements (2026-09-12, this workstation)
+
+Hardware: Windows 10 10.0.19045, i7-4980HQ (8 logical), 32 GB RAM (22.6 free), 6 AI threads, ctx 8192. Runtime: llama-server b10909 CPU. Model: `gemma-4-12B-it-Q4_K_M.gguf`, 7,381,382,176 bytes.
+
+- llama-bench: pp32 9.42 tok/s, tg64 2.57 tok/s (Haswell backend).
+- Cold start: 11-51 s (disk cache dependent). First visible token: ~25-29 s — Gemma 4 emits an extensive `reasoning_content` preamble that the client deliberately ignores (never shown, never persisted); steady visible decode follows at hardware rate.
+- Model-loaded RSS: ~14.8 GB. Cancel latency: ~16 ms (model stays loaded). Shutdown: ~1 s, zero orphan processes across repeated runs.
+- Packaged CDP E2E (signed unpacked payload, isolated data dir): 12/12 — startup, search-only control, zero llama processes during search, chat open, streamed `PKG_AI_OK` assistant bubble, persisted turn in SQLite, graceful exit 0, no orphan server.
+
 ## Remaining environment tests
 
-- Real Gemma 4 12B smoke test where the runtime/model are provisioned: runtime starts, model loads, `Respond with exactly: LOCAL_AI_OK` streams back, Stop works, a second prompt reuses the loaded model, and quit leaves no orphan `llama-server.exe`. Not executed on this workstation (no runtime/GGUF present).
-- Authenticode-signed Portable/Setup executables on a clean offline Windows machine.
+- Public-certificate clean-machine runs and portable-wrapper startup on this workstation (wrapper exits code 2; unpacked payload fully verified).
 - One-million-file execution.
 - ACL-denied, offline OneDrive, network, HDD/external, storage-full, and read-only media.
 - Deliberate native worker crash injection; restart recovery and forced worker error are covered.
