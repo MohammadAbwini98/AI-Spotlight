@@ -74,23 +74,170 @@ function verifyManifest(rootDirectory) {
   return true
 }
 
-if (require.main === module) {
-  const [operation, root] = process.argv.slice(2)
-  if (!root || !['--create', '--verify'].includes(operation)) {
-    process.stderr.write(
-      'Usage: node scripts/release-integrity.cjs --create|--verify <release-dir>\n'
-    )
-    process.exit(2)
+function assertShareManifestStructure(manifest) {
+  if (!manifest || typeof manifest !== 'object') throw new Error('Share manifest is invalid JSON.')
+  if (manifest.formatVersion !== 1) throw new Error('Share manifest formatVersion must be 1.')
+  for (const field of ['application', 'version', 'originalFile', 'originalSha256']) {
+    if (typeof manifest[field] !== 'string' || manifest[field].length === 0) {
+      throw new Error(`Share manifest field '${field}' is missing or empty.`)
+    }
   }
-  try {
-    operation === '--create' ? createManifest(root) : verifyManifest(root)
-    process.stdout.write(
-      `Release integrity ${operation === '--create' ? 'manifest created' : 'verified'}.\n`
-    )
-  } catch (error) {
-    process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
-    process.exit(1)
+  for (const field of ['originalSize', 'chunkSizeBytes', 'partCount']) {
+    if (!Number.isInteger(manifest[field]) || manifest[field] <= 0) {
+      throw new Error(`Share manifest field '${field}' must be a positive integer.`)
+    }
+  }
+  if (!/^[0-9a-f]{64}$/i.test(manifest.originalSha256)) {
+    throw new Error('Share manifest originalSha256 must be 64 hex characters.')
+  }
+  if (manifest.originalFile.includes('/') || manifest.originalFile.includes('\\') || manifest.originalFile.includes('..')) {
+    throw new Error('Share manifest originalFile must be a plain file name.')
+  }
+  if (!Array.isArray(manifest.parts) || manifest.parts.length === 0) {
+    throw new Error('Share manifest parts list is missing or empty.')
+  }
+  if (manifest.parts.length !== manifest.partCount) {
+    throw new Error('Share manifest parts list length does not match partCount.')
   }
 }
 
-module.exports = { createManifest, verifyManifest }
+/**
+ * Verify a split share package: manifest structure, exact part set, per-part
+ * size/hash, size totals, and (when provided) correspondence of originalSha256
+ * with the signed artifact used for splitting. Throws on any mismatch.
+ */
+function verifySharePackage(shareDirectory, originalFilePath = null) {
+  const root = resolve(shareDirectory)
+  let manifest
+  try {
+    manifest = JSON.parse(readFileSync(join(root, 'manifest.json'), 'utf8'))
+  } catch (error) {
+    throw new Error(`Share manifest cannot be read: ${error instanceof Error ? error.message : String(error)}`)
+  }
+  assertShareManifestStructure(manifest)
+  const { originalFile, originalSize, originalSha256, chunkSizeBytes, partCount } = manifest
+
+  const width = Math.max(3, String(partCount).length)
+  const expectedNames = Array.from(
+    { length: partCount },
+    (_, index) => `${originalFile}.part${String(index + 1).padStart(width, '0')}`
+  )
+  const seen = new Set()
+  manifest.parts.forEach((entry, index) => {
+    if (!entry || typeof entry !== 'object') throw new Error(`Share manifest part ${index + 1} is invalid.`)
+    if (entry.name !== expectedNames[index]) {
+      throw new Error(`Share manifest part ${index + 1} must be named ${expectedNames[index]}.`)
+    }
+    if (seen.has(entry.name)) throw new Error(`Share manifest contains a duplicate part: ${entry.name}.`)
+    seen.add(entry.name)
+    if (!Number.isInteger(entry.size) || entry.size <= 0) {
+      throw new Error(`Share manifest part ${entry.name} needs a positive integer size.`)
+    }
+    if (!/^[0-9a-f]{64}$/i.test(entry.sha256 ?? '')) {
+      throw new Error(`Share manifest part ${entry.name} needs a 64-character hex sha256.`)
+    }
+    const expectedSize =
+      index === partCount - 1 ? originalSize - chunkSizeBytes * (partCount - 1) : chunkSizeBytes
+    if (entry.size !== expectedSize) {
+      throw new Error(`Share manifest part ${entry.name} size ${entry.size} does not match expected ${expectedSize}.`)
+    }
+  })
+
+  const partsDirectory = join(root, 'parts')
+  if (!existsSync(partsDirectory) || !statSync(partsDirectory).isDirectory()) {
+    throw new Error('Share package parts directory is missing.')
+  }
+  const onDisk = readdirSync(partsDirectory, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => entry.name)
+    .sort()
+  const expectedSorted = [...expectedNames].sort()
+  if (JSON.stringify(onDisk) !== JSON.stringify(expectedSorted)) {
+    const missing = expectedNames.filter((name) => !onDisk.includes(name))
+    const extra = onDisk.filter((name) => !expectedNames.includes(name))
+    const details = [
+      ...(missing.length > 0 ? [`missing: ${missing.join(', ')}`] : []),
+      ...(extra.length > 0 ? [`unexpected: ${extra.join(', ')}`] : [])
+    ].join('; ')
+    throw new Error(`Share package part set mismatch (${details}).`)
+  }
+
+  let total = 0
+  for (const entry of manifest.parts) {
+    const absolute = join(partsDirectory, entry.name)
+    if (statSync(absolute).size !== entry.size) {
+      throw new Error(`Share part size mismatch: ${entry.name}.`)
+    }
+    if (sha256(absolute) !== entry.sha256.toLowerCase()) {
+      throw new Error(`Share part hash mismatch: ${entry.name}.`)
+    }
+    total += entry.size
+  }
+  if (total !== originalSize) {
+    throw new Error(`Share part sizes sum to ${total}, expected originalSize ${originalSize}.`)
+  }
+
+  if (originalFilePath) {
+    const absolute = resolve(originalFilePath)
+    if (!existsSync(absolute) || !statSync(absolute).isFile()) {
+      throw new Error(`Signed original artifact not found: ${originalFilePath}`)
+    }
+    if (statSync(absolute).size !== originalSize) {
+      throw new Error('Signed original artifact size does not match the share manifest.')
+    }
+    if (sha256(absolute) !== originalSha256.toLowerCase()) {
+      throw new Error('Signed original artifact SHA-256 does not match the share manifest.')
+    }
+  }
+
+  return { partCount, originalSize, chunkSizeBytes }
+}
+
+if (require.main === module) {
+  const [operation, root, ...rest] = process.argv.slice(2)
+  if (operation === '--verify-share') {
+    if (!root) {
+      process.stderr.write(
+        'Usage: node scripts/release-integrity.cjs --verify-share <share-dir> [--original <signed-artifact>]\n'
+      )
+      process.exit(2)
+    }
+    let original = null
+    if (rest.length > 0) {
+      if (rest.length !== 2 || rest[0] !== '--original') {
+        process.stderr.write(
+          'Usage: node scripts/release-integrity.cjs --verify-share <share-dir> [--original <signed-artifact>]\n'
+        )
+        process.exit(2)
+      }
+      original = rest[1]
+    }
+    try {
+      const summary = verifySharePackage(root, original)
+      process.stdout.write(
+        `Share package verified: ${summary.partCount} parts, ${summary.originalSize} bytes, original SHA-256 match${original ? ' (signed artifact)' : ''}.\n`
+      )
+    } catch (error) {
+      process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
+      process.exit(1)
+    }
+  } else {
+    if (!root || !['--create', '--verify'].includes(operation)) {
+      process.stderr.write(
+        'Usage: node scripts/release-integrity.cjs --create|--verify <release-dir>\n'
+      )
+      process.exit(2)
+    }
+    try {
+      operation === '--create' ? createManifest(root) : verifyManifest(root)
+      process.stdout.write(
+        `Release integrity ${operation === '--create' ? 'manifest created' : 'verified'}.\n`
+      )
+    } catch (error) {
+      process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
+      process.exit(1)
+    }
+  }
+}
+
+module.exports = { createManifest, verifyManifest, verifySharePackage }

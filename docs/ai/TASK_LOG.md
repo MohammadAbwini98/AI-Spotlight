@@ -1515,3 +1515,36 @@
 - Clean-machine handoff: on a machine without VC++ Redist, run `DeepDive-1.0.2-setup.exe` (per-user, no elevation) or `DeepDive-1.0.2-portable.exe`, then AI Chat → model import → generate; expected: no prerequisite prompt, `llama-server` modules resolve beside the exe.
 - Physical-offline handoff: disable all adapters, then launch → search → AI open → Gemma load → generate → stream → cancel → second request → persistence → restart → shutdown.
 - Post-reboot handoff: after reboot measure app launch, llama start, model-ready, prompt eval, hidden-reasoning duration, first visible token; report cold vs warm vs loaded table.
+
+---
+
+### 2026-09-12 — Muse Spark (OpenCode) — Split Release Package for Easy Sharing (1.0.2)
+
+**Agent**: Muse Spark (OpenCode)
+**Task**: Distribution-only share packaging for release candidate 1.0.2: split the final signed Portable + Setup executables into transferable 20 MB parts with manifests and a PowerShell-only reassembly path. No runtime, AI, binary, signature, or installer behavior changes.
+
+**Files Created**:
+- `scripts/split-release.ps1` — streaming splitter (bounded 1 MiB buffer, Int64 math, incremental per-part + original SHA-256, `-Force` overwrite protection, `-ChunkSizeBytes` test hook)
+- `scripts/share/Reassemble.template.ps1` — recipient script: manifest/part/order/size/hash validation, binary-stream concatenation, final size+hash acceptance, exact success/failure output contract
+- `scripts/Create-SharePackage.ps1` — engineer wrapper: discovers `DeepDive-<Version>-{portable,setup}.exe`, splits both, verifies each via release-integrity
+- `tests/share-packaging.spec.ts` — 12 tests (4 boundary reconstructions, missing/corrupt/tampered/existing-destination/overwrite-guard negatives, 4-digit padding past 999 parts, `verifySharePackage` cases)
+
+**Files Modified**:
+- `scripts/release-integrity.cjs` — `verifySharePackage()` + `--verify-share [--original]` CLI (manifest structure, exact part set, per-part size/hash, totals, signed-artifact correspondence)
+- `package.json` — `release:split` command (optional; not in normal build/release flow)
+- `tests/release-packaging.spec.ts` — `release:split` wiring guard (+1 test)
+- `docs/ai/` commands, testing, current-state, features, task log
+
+**Tests Run**:
+- `npm run typecheck` PASS; `npm run lint` PASS (0 warnings); `npm test` **170 passed** + 15 env-gated skipped (33 files)
+- `npm run release:split` on real 1.0.2 artifacts → `release/share/1.0.2/` with both packages, each self-verified against its signed original
+- Recipient simulation (isolated temp dir): both reassembled → sizes equal, SHA-256 match, Authenticode Valid, success output verbatim
+- Reassembled Portable launch: CDP alive (Chrome/150), bundled `llama-server.exe --version` exit 0 from extracted payload, CDP `Browser.close` → wrapper exit 0, extraction temp cleaned, zero orphans
+
+**Tests Not Run**: >4 GB real-file split (Int64/FileStream streaming by construction, exercised at 131 MB; no 4 GB fixture in tests)
+
+**Result**: Done — SIGNED RELEASE → SPLIT → TRANSFERABLE PARTS → VERIFIED REASSEMBLY → IDENTICAL SHA-256 → VALID SIGNATURE → APPLICATION RUNS
+**Notes**:
+- Naming deviation (documented): task examples use `AI-Spotlight-1.0.2-*.exe`; actual signed artifacts are `DeepDive-1.0.2-{portable,setup}.exe`, so share dirs/parts use the real names while `manifest.application` carries "AI Spotlight".
+- Portable 130,955,120 bytes / Setup 131,214,520 bytes; 20,971,520-byte chunks; 7 parts each; last parts 5,126,000 / 5,385,400.
+- Share output lives under gitignored `release/share/`; splitting never runs inside `release`/`release:local`.

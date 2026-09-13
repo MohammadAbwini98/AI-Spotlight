@@ -176,4 +176,18 @@ describe('Windows release packaging', () => {
     expect(preparationScript).toContain('DeepDive-Local.cer')
     expect(preparationScript).not.toMatch(/Export-PfxCertificate/i)
   })
+
+  it('exposes an optional split-only share-packaging command', () => {
+    const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
+      scripts: Record<string, string>
+    }
+    const splitScript = readFileSync('scripts/split-release.ps1', 'utf8')
+    const shareScript = readFileSync('scripts/Create-SharePackage.ps1', 'utf8')
+
+    expect(packageJson.scripts['release:split']).toContain('Create-SharePackage.ps1')
+    expect(existsSync('scripts/share/Reassemble.template.ps1')).toBe(true)
+    expect(splitScript).toContain('ChunkSizeMB')
+    expect(shareScript).toContain('DeepDive-$Version-portable.exe')
+    expect(shareScript).toContain('DeepDive-$Version-setup.exe')
+  })
 })
