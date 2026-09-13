@@ -1548,3 +1548,41 @@
 - Naming deviation (documented): task examples use `AI-Spotlight-1.0.2-*.exe`; actual signed artifacts are `DeepDive-1.0.2-{portable,setup}.exe`, so share dirs/parts use the real names while `manifest.application` carries "AI Spotlight".
 - Portable 130,955,120 bytes / Setup 131,214,520 bytes; 20,971,520-byte chunks; 7 parts each; last parts 5,126,000 / 5,385,400.
 - Share output lives under gitignored `release/share/`; splitting never runs inside `release`/`release:local`.
+
+---
+
+### 2026-09-13 - Muse Spark (OpenCode) - Separate Application + AI Model Split Distribution
+
+**Agent**: Muse Spark (OpenCode)
+**Task**: Offline distribution of the GGUF as a separate split package. Application split workflow preserved untouched; new model path reuses the generic splitter. No runtime, AI, binary, signature, or installer changes; GGUF never embedded anywhere.
+
+**Files Created**:
+- `scripts/split-model.ps1` - GGUF pre-validation (extension, GGUF magic, app-manifest size bounds) + thin wrapper over split-release with ai-model shape
+- `scripts/share/Reassemble-Model.template.ps1` - recipient script: disk-space preflight, progress, `.partial` interruption safety, final size+SHA gate, MODEL SHA-256: VERIFIED contract
+- `tests/share-model-packaging.spec.ts` - 13 tests (simulated-model round-trip, manifest metadata, GGUF rejection, missing/corrupt/tampered/extra/existing-destination/preflight negatives, verifier + gitignore + wiring cases)
+
+**Files Modified**:
+- `scripts/split-release.ps1` - additive optional params only (PackageType, OutputName, template/script override, model metadata); application output byte-identical to before
+- `scripts/split-model.ps1`, `scripts/Create-SharePackage.ps1` - explicit quoting of all Start-Process values (see notes: unquoted "Gemma 4" rebound to ChunkSizeBytes)
+- `scripts/Create-SharePackage.ps1` - complete offline mode (`AI-Spotlight-<Version>/` with Application/{Setup,Portable} + Model/<gguf>/ + root README), independent app/model chunk sizes
+- `scripts/release-integrity.cjs` - `verifySharePackage` understands `packageType` ai-model; streaming SHA-256 (Node readFileSync refuses files over ~2 GiB); MODEL/APPLICATION PASS/FAIL diagnostics
+- `package.json` - `release:split:model`, `release:share:offline` (optional tooling only)
+- `.gitignore` - `*.gguf`, `*.gguf.partial` (`release/` already covered `release/share/`)
+- `docs/ai/` commands, testing, current-state, features, decisions, known-issues, task log
+
+**Tests Run**:
+- `npm run typecheck` PASS; `npm run lint` PASS (0 warnings); `npm test` **183 passed** + 15 env-gated skipped (34 files)
+- Real 7.38 GB model (`D:\AiQual\models\gemma-4-12b-it-Q4_K_M.gguf`, baseline SHA-256 76E3E8ED...): GGUF validation PASS, split into 71 x 100 MB parts in 79 s, `--verify-share --original` PASS, recipient reassembly 71/71 in ~120-181 s at ~133 MB peak host memory, size + SHA-256 identical
+- Complete offline set via `Create-SharePackage.ps1 -ModelPath ...` (Application/Setup + Application/Portable + Model, root README): all three verified against sources
+- Reconstructed model through production path: `importModelFile` copy into managed dir (7.38 GB, existing full-copy behavior kept), `ensureReady` cold start 11.7 s, short prompt answered with LOCAL_AI_OK marker (first visible token 24.4 s reasoning preamble, as qualified), shutdown 1.2 s with zero-orphan assertion PASS
+- Settings import flow confirmed to call the same production `importModelFile` (`electron/main/ipc/ai.ipc.ts:207`)
+
+**Tests Not Run**: full 15-test qual file against reconstructed bytes (targeted inference PASS; bytes proven identical to the 15/15-qualified original, so behavior cannot differ); >2 GiB hashing now covered by the real-model run itself
+
+**Result**: Done - GGUF VALIDATED + SPLIT (71 PARTS) + EACH PART HASHED + SHARE PACKAGE VERIFIED + REASSEMBLED + FINAL SHA-256 MATCH + PRODUCTION IMPORT + REAL INFERENCE PASS; application and model remain separate artifacts
+**Notes**:
+- Actual model filename on disk is `gemma-4-12b-it-Q4_K_M.gguf` (lowercase b); all names/sizes/hashes derived from the file, never hardcoded. Spec example metadata (Gemma 4 / 12B / Q4_K_M) passed explicitly, grounded in the app manifest name and quantization.
+- Tooling defect found and fixed in-session: unquoted Start-Process values let "Gemma 4" split and rebind positionally (chunk size silently became 4). Fixed with explicit quoting in both PS wrappers; regression covered by spaced-metadata assertions in the round-trip test. No application code involved.
+- Node `readFileSync` cannot hash files over ~2 GiB; the integrity verifier now streams (constant memory). Same fix benefits all release hashing paths with identical digests.
+- Disk accounting (measured): transfer parts ~7.38 GB + reconstructed file ~7.38 GB + managed application copy ~7.38 GB (~22 GB transient while all three exist; ~15 GB steady keeping transfer + managed). Scratch used F: (840 GB free); C:/D: untouched except pre-existing managed copy.
+- Evidence locations (outside repo, gitignored): model package `F:\SpotlightShare\model-pkg\`, recipient rebuild `F:\SpotlightShare\recipient\`, complete set `F:\SpotlightShare\AI-Spotlight-1.0.2\`, qual staging/data `F:\qual-home\`, `F:\qual-data\`.

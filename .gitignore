@@ -17,3 +17,7 @@ out/
 electron.vite.config.*.mjs
 # Provisioned llama.cpp binaries (packaging/qualification time only, never committed).
 resources/ai/runtime/
+# GGUF model weights and split/share distribution output are never committed.
+*.gguf
+*.gguf.partial
+*.gguf.part*

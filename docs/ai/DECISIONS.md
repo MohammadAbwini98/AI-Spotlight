@@ -278,3 +278,15 @@
 **Alternatives Considered**: Prerequisite redist installer (rejected: elevation vs per-user installer); static runtime (rejected: fragile custom fork); System32 copies (rejected: not a redistribution source).
 
 **Related Files**: `resources/ai/vc-runtime.json`, `resources/ai/README.md`, `scripts/verify-native-dependencies.cjs`, `scripts/package-release.cjs`, `scripts/verify-release-security.ps1`, `tests/native-dependencies.spec.ts`
+
+### 2026-09-13 — Separate Application and AI-Model Split Distribution
+
+**Decision**: Distribute the GGUF as an independent split package (`packageType: ai-model`, default 100 MB chunks, `Reassemble-Model.ps1`) alongside — never inside — the application split packages (20 MB chunks, `Reassemble.ps1`). One binary-splitting implementation (`split-release.ps1`, extended by package-type parameters) serves both; recipient reassembly scripts are separate standalone files by necessity (recipients receive only PowerShell). Model metadata comes only from the repository's own `model-manifest.json`/filename/explicit engineer input — no invented hashes, URLs, or licenses. The complete offline set (`AI-Spotlight-<version>/`) is assembled by one `release:share:offline` command; application and model remain independently transferable, verifiable, replaceable, and versioned (compatibility metadata is informational only).
+
+**Reason**: The 7.38 GB model cannot ride size-restricted channels and must not bloat installers or the repository; independent packages let either side evolve without re-shipping the other.
+
+**Impact**: New `split-model.ps1`, `Reassemble-Model.template.ps1`, `ai-model` verifier support, two package commands, and 13 model tests; `release-integrity.cjs` hashing is now streaming (required past Node's ~2 GiB `readFileSync` limit). Full 7.38 GB round-trip plus production import and real inference verified on this workstation.
+
+**Alternatives Considered**: Second incompatible splitter (rejected: duplication); embedding the GGUF in Setup/Portable/asar/repo (rejected by design); static prerequisite installer for the model (rejected: no installer exists for a data file).
+
+**Related Files**: `scripts/split-model.ps1`, `scripts/split-release.ps1`, `scripts/share/Reassemble-Model.template.ps1`, `scripts/Create-SharePackage.ps1`, `scripts/release-integrity.cjs`, `tests/share-model-packaging.spec.ts`

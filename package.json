@@ -32,6 +32,8 @@
     "release:local:dry-run": "node scripts/package-release.cjs --local --dry-run",
     "verify:release:security": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-release-security.ps1",
     "release:split": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Create-SharePackage.ps1",
+    "release:split:model": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/split-model.ps1",
+    "release:share:offline": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Create-SharePackage.ps1",
     "postinstall": "electron-builder install-app-deps"
   },
   "dependencies": {

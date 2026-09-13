@@ -1,8 +1,11 @@
 // Creates or verifies a deterministic SHA-256 inventory for release files.
 const { createHash } = require('crypto')
 const {
+  closeSync,
   existsSync,
+  openSync,
   readFileSync,
+  readSync,
   readdirSync,
   renameSync,
   rmSync,
@@ -25,7 +28,22 @@ function listFiles(root, directory = root) {
 }
 
 function sha256(path) {
-  return createHash('sha256').update(readFileSync(path)).digest('hex')
+  // Streaming read: readFileSync refuses files larger than ~2 GiB, but
+  // share packages routinely cover multi-GB models. Bounded 1 MiB buffer,
+  // constant memory at any file size.
+  const fd = openSync(path, 'r')
+  try {
+    const hash = createHash('sha256')
+    const buffer = Buffer.allocUnsafe(1024 * 1024)
+    for (;;) {
+      const read = readSync(fd, buffer, 0, buffer.length, null)
+      if (read <= 0) break
+      hash.update(buffer.subarray(0, read))
+    }
+    return hash.digest('hex')
+  } finally {
+    closeSync(fd)
+  }
 }
 
 function createManifest(rootDirectory) {
@@ -74,13 +92,41 @@ function verifyManifest(rootDirectory) {
   return true
 }
 
+function sharePackageType(manifest) {
+  if (manifest && typeof manifest === 'object' && manifest.packageType != null) {
+    return manifest.packageType
+  }
+  return 'application'
+}
+
+function shareFileName(manifest, packageType) {
+  if (packageType === 'ai-model') {
+    return manifest.modelFile ?? manifest.originalFile
+  }
+  return manifest.originalFile
+}
+
 function assertShareManifestStructure(manifest) {
   if (!manifest || typeof manifest !== 'object') throw new Error('Share manifest is invalid JSON.')
   if (manifest.formatVersion !== 1) throw new Error('Share manifest formatVersion must be 1.')
-  for (const field of ['application', 'version', 'originalFile', 'originalSha256']) {
+  const packageType = sharePackageType(manifest)
+  if (packageType !== 'application' && packageType !== 'ai-model') {
+    throw new Error(`Share manifest packageType must be 'application' or 'ai-model'.`)
+  }
+  const fileName = shareFileName(manifest, packageType)
+  const requiredText =
+    packageType === 'ai-model' ? ['application', 'originalSha256'] : ['application', 'version', 'originalSha256']
+  for (const field of requiredText) {
     if (typeof manifest[field] !== 'string' || manifest[field].length === 0) {
       throw new Error(`Share manifest field '${field}' is missing or empty.`)
     }
+  }
+  if (typeof fileName !== 'string' || fileName.length === 0) {
+    throw new Error(
+      packageType === 'ai-model'
+        ? `Share manifest field 'modelFile' is missing or empty.`
+        : `Share manifest field 'originalFile' is missing or empty.`
+    )
   }
   for (const field of ['originalSize', 'chunkSizeBytes', 'partCount']) {
     if (!Number.isInteger(manifest[field]) || manifest[field] <= 0) {
@@ -90,8 +136,12 @@ function assertShareManifestStructure(manifest) {
   if (!/^[0-9a-f]{64}$/i.test(manifest.originalSha256)) {
     throw new Error('Share manifest originalSha256 must be 64 hex characters.')
   }
-  if (manifest.originalFile.includes('/') || manifest.originalFile.includes('\\') || manifest.originalFile.includes('..')) {
-    throw new Error('Share manifest originalFile must be a plain file name.')
+  if (fileName.includes('/') || fileName.includes('\\') || fileName.includes('..')) {
+    throw new Error(
+      packageType === 'ai-model'
+        ? 'Share manifest modelFile must be a plain file name.'
+        : 'Share manifest originalFile must be a plain file name.'
+    )
   }
   if (!Array.isArray(manifest.parts) || manifest.parts.length === 0) {
     throw new Error('Share manifest parts list is missing or empty.')
@@ -104,7 +154,9 @@ function assertShareManifestStructure(manifest) {
 /**
  * Verify a split share package: manifest structure, exact part set, per-part
  * size/hash, size totals, and (when provided) correspondence of originalSha256
- * with the signed artifact used for splitting. Throws on any mismatch.
+ * with the file used for splitting (signed artifact or source model).
+ * Understands `packageType` "application" (default) and "ai-model".
+ * Throws on any mismatch.
  */
 function verifySharePackage(shareDirectory, originalFilePath = null) {
   const root = resolve(shareDirectory)
@@ -115,12 +167,15 @@ function verifySharePackage(shareDirectory, originalFilePath = null) {
     throw new Error(`Share manifest cannot be read: ${error instanceof Error ? error.message : String(error)}`)
   }
   assertShareManifestStructure(manifest)
-  const { originalFile, originalSize, originalSha256, chunkSizeBytes, partCount } = manifest
+  const packageType = sharePackageType(manifest)
+  const fileName = shareFileName(manifest, packageType)
+  const { originalSize, originalSha256, chunkSizeBytes, partCount } = manifest
+  const originalLabel = packageType === 'ai-model' ? 'Original model file' : 'Signed original artifact'
 
   const width = Math.max(3, String(partCount).length)
   const expectedNames = Array.from(
     { length: partCount },
-    (_, index) => `${originalFile}.part${String(index + 1).padStart(width, '0')}`
+    (_, index) => `${fileName}.part${String(index + 1).padStart(width, '0')}`
   )
   const seen = new Set()
   manifest.parts.forEach((entry, index) => {
@@ -180,17 +235,17 @@ function verifySharePackage(shareDirectory, originalFilePath = null) {
   if (originalFilePath) {
     const absolute = resolve(originalFilePath)
     if (!existsSync(absolute) || !statSync(absolute).isFile()) {
-      throw new Error(`Signed original artifact not found: ${originalFilePath}`)
+      throw new Error(`${originalLabel} not found: ${originalFilePath}`)
     }
     if (statSync(absolute).size !== originalSize) {
-      throw new Error('Signed original artifact size does not match the share manifest.')
+      throw new Error(`${originalLabel} size does not match the share manifest.`)
     }
     if (sha256(absolute) !== originalSha256.toLowerCase()) {
-      throw new Error('Signed original artifact SHA-256 does not match the share manifest.')
+      throw new Error(`${originalLabel} SHA-256 does not match the share manifest.`)
     }
   }
 
-  return { partCount, originalSize, chunkSizeBytes }
+  return { packageType, fileName, partCount, originalSize, chunkSizeBytes }
 }
 
 if (require.main === module) {
@@ -214,10 +269,26 @@ if (require.main === module) {
     }
     try {
       const summary = verifySharePackage(root, original)
+      const kind = summary.packageType === 'ai-model' ? 'MODEL' : 'APPLICATION'
+      const subject = summary.packageType === 'ai-model' ? 'Model' : 'Application'
       process.stdout.write(
-        `Share package verified: ${summary.partCount} parts, ${summary.originalSize} bytes, original SHA-256 match${original ? ' (signed artifact)' : ''}.\n`
+        [
+          `${kind} SHARE PACKAGE: PASS`,
+          `Parts: ${summary.partCount} / ${summary.partCount}`,
+          `Total bytes: ${summary.originalSize}`,
+          `${subject} SHA-256: VERIFIED`,
+          ''
+        ].join('\n')
       )
     } catch (error) {
+      let kind = 'SHARE PACKAGE'
+      try {
+        const probed = JSON.parse(readFileSync(join(resolve(root), 'manifest.json'), 'utf8'))
+        kind = `${sharePackageType(probed) === 'ai-model' ? 'MODEL' : 'APPLICATION'} SHARE PACKAGE`
+      } catch {
+        // Keep the generic label when the manifest itself is unreadable.
+      }
+      process.stderr.write(`${kind}: FAIL\n`)
       process.stderr.write(`${error instanceof Error ? error.message : String(error)}\n`)
       process.exit(1)
     }

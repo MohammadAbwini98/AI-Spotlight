@@ -27,6 +27,27 @@ param(
 
   [string]$OutputDirectory = '',
 
+  # Package directory name override (default: input file base name).
+  [string]$OutputName = '',
+
+  # 'application' preserves the original EXE share-package behavior exactly.
+  # 'ai-model' writes the model manifest shape with modelFile/model metadata.
+  [ValidateSet('application', 'ai-model')]
+  [string]$PackageType = 'application',
+
+  # Reassembly template copied into the package (resolved under scripts\share).
+  [string]$ReassembleTemplateName = 'Reassemble.template.ps1',
+
+  # File name of the copied reassembly script inside the package.
+  [string]$ReassembleOutputName = 'Reassemble.ps1',
+
+  # Optional ai-model metadata (only written when non-empty; never invented
+  # by this script - callers source them from project configuration).
+  [string]$ModelFamily = '',
+  [string]$ModelSize = '',
+  [string]$Quantization = '',
+  [string]$RecommendedApplicationVersion = '',
+
   [switch]$Force
 )
 
@@ -54,7 +75,15 @@ if ($chunkSize -le 0) {
 }
 
 $originalName = [System.IO.Path]::GetFileName($inputFull)
-$packageName = [System.IO.Path]::GetFileNameWithoutExtension($inputFull)
+$packageName = if ([string]::IsNullOrWhiteSpace($OutputName)) {
+  [System.IO.Path]::GetFileNameWithoutExtension($inputFull)
+}
+else {
+  $OutputName
+}
+if ($packageName -match '[\\/]') {
+  Fail "ERROR: output name must be a plain directory name: $packageName"
+}
 if ([string]::IsNullOrWhiteSpace($OutputDirectory)) {
   $OutputDirectory = Join-Path $inputInfo.DirectoryName 'share'
 }
@@ -80,7 +109,10 @@ New-Item -ItemType Directory -Path $partsDirectory -Force | Out-Null
 [long]$partCount = if ($remainder -gt 0) { $quotient + 1 } else { $quotient }
 $width = [Math]::Max(3, "$partCount".Length)
 
-$templatePath = Join-Path $PSScriptRoot 'share\Reassemble.template.ps1'
+$templatePath = Join-Path $PSScriptRoot "share\$ReassembleTemplateName"
+if ($ReassembleTemplateName -match '[\\/]|\.\.') {
+  Fail "ERROR: reassembly template must be a plain file name: $ReassembleTemplateName"
+}
 if (-not (Test-Path -LiteralPath $templatePath -PathType Leaf)) {
   Fail "ERROR: reassembly template not found:`n$templatePath"
 }
@@ -139,22 +171,89 @@ $appVersion = ''
 if ($originalName -match '(\d+\.\d+\.\d+)') {
   $appVersion = $Matches[1]
 }
-$manifest = [ordered]@{
-  formatVersion  = 1
-  application    = $appName
-  version        = $appVersion
-  originalFile   = $originalName
-  originalSize   = $originalSize
-  originalSha256 = $originalHash
-  chunkSizeBytes = $chunkSize
-  partCount      = $partCount
-  parts          = $partEntries
+if ($ReassembleOutputName -match '[\\/]') {
+  Fail "ERROR: reassembly script name must be a plain file name: $ReassembleOutputName"
+}
+if ($PackageType -eq 'ai-model') {
+  $manifest = [ordered]@{
+    formatVersion = 1
+    packageType   = 'ai-model'
+    application   = $appName
+    modelFile     = $originalName
+  }
+  if (-not [string]::IsNullOrWhiteSpace($ModelFamily)) { $manifest['modelFamily'] = $ModelFamily }
+  if (-not [string]::IsNullOrWhiteSpace($ModelSize)) { $manifest['modelSize'] = $ModelSize }
+  if (-not [string]::IsNullOrWhiteSpace($Quantization)) { $manifest['quantization'] = $Quantization }
+  if (-not [string]::IsNullOrWhiteSpace($RecommendedApplicationVersion)) {
+    $manifest['recommendedApplicationVersion'] = $RecommendedApplicationVersion
+  }
+  $manifest['originalSize'] = $originalSize
+  $manifest['originalSha256'] = $originalHash
+  $manifest['chunkSizeBytes'] = $chunkSize
+  $manifest['partCount'] = $partCount
+  $manifest['parts'] = $partEntries
+}
+else {
+  $manifest = [ordered]@{
+    formatVersion  = 1
+    application    = $appName
+    version        = $appVersion
+    originalFile   = $originalName
+    originalSize   = $originalSize
+    originalSha256 = $originalHash
+    chunkSizeBytes = $chunkSize
+    partCount      = $partCount
+    parts          = $partEntries
+  }
 }
 $utf8NoBom = New-Object System.Text.UTF8Encoding $false
 [System.IO.File]::WriteAllText($manifestPath, ($manifest | ConvertTo-Json -Depth 4), $utf8NoBom)
 
-Copy-Item -LiteralPath $templatePath -Destination (Join-Path $packageDirectory 'Reassemble.ps1')
+Copy-Item -LiteralPath $templatePath -Destination (Join-Path $packageDirectory $ReassembleOutputName)
 
+if ($PackageType -eq 'ai-model') {
+  $chunkLabel = if ($ChunkSizeBytes -gt 0) { "$chunkSize bytes" } else { "$ChunkSizeMB MB" }
+  $readmeLines = @(
+    'AI Spotlight - Gemma Model Package'
+    ''
+    'This model was divided into multiple files for easier transfer.'
+    ''
+    'REASSEMBLY'
+    ''
+    '1. Make sure ALL .part files are present in the "parts" folder.'
+    "2. Keep manifest.json and $ReassembleOutputName together."
+    '3. Run:'
+    ''
+    "   powershell -ExecutionPolicy Bypass -File .\$ReassembleOutputName"
+    ''
+    '4. Wait for verification to finish.'
+    ''
+    'The script will:'
+    ''
+    '- verify every model part'
+    '- reconstruct the original GGUF'
+    '- verify the final SHA-256 checksum'
+    ''
+    'Only use the reconstructed model if the script reports:'
+    ''
+    'MODEL SHA-256: VERIFIED'
+    ''
+    'After reconstruction, open AI Spotlight:'
+    ''
+    'Settings -> AI -> Select Model'
+    ''
+    'and select/import the reconstructed GGUF.'
+    ''
+    "Package: $packageName"
+    "Model: $originalName"
+    "Parts: $partCount x $chunkLabel (last part may be smaller)"
+    "SHA-256: $originalHash"
+    ''
+    'Do not use an incomplete or unverified model file.'
+    ''
+  )
+}
+else {
 $chunkLabel = if ($ChunkSizeBytes -gt 0) { "$chunkSize bytes" } else { "$ChunkSizeMB MB" }
 $readmeLines = @(
   "$appName $appVersion"
@@ -183,6 +282,7 @@ $readmeLines = @(
   'Do not run the resulting application if checksum verification fails.'
   ''
 )
+}
 $readmeText = $readmeLines -join "`r`n"
 [System.IO.File]::WriteAllText((Join-Path $packageDirectory 'README.txt'), $readmeText, $utf8NoBom)
 
